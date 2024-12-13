@@ -19,13 +19,13 @@ func (u *userUseCase) GetUser(ctx context.Context, id string) (*entity.User, err
 	return u.repo.GetByID(ctx, id)
 }
 
-func (u *userUseCase) UpsertUser(ctx context.Context, user *model.User) error {
+func (u *userUseCase) UpsertUser(ctx context.Context, user *model.UserRequest) error {
 	dataUser := entity.User{
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
 		Password: user.Password,
-		ImgUrl:   user.ImgUrl,
+		// ImgUrl:   user.ImgUrl,
 	}
 	return u.repo.SaveUser(ctx, &dataUser)
 }

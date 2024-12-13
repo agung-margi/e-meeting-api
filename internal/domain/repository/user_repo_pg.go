@@ -43,26 +43,25 @@ func (r *userRepo) GetByID(ctx context.Context, id string) (*entity.User, error)
 
 func (r *userRepo) SaveUser(ctx context.Context, user *entity.User) error {
 	query := `
-		INSERT INTO users (username, email, password, role, img_url, is_active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO users (username, email, password, is_admin, img_url, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id
 	`
-	_, err := r.DB.ExecContext(ctx, query,
+	err := r.DB.QueryRowContext(ctx, query,
 		user.Username,
 		user.Email,
 		user.Password,
 		user.IsAdmin,
 		user.ImgUrl,
 		user.IsActive,
-		user.CreatedAt,
-		user.UpdatedAt,
-	)
+	).Scan(&user.ID)
 	return err
 }
 
 func (r *userRepo) UpdateUser(ctx context.Context, user *entity.User) error {
 	query := `
 		UPDATE users
-		SET username = $1, email = $2, password = $3, role = $4, img_url = $5, is_active = $6, updated_at = $7
+		SET username = $1, email = $2, password = $3, is_admin = $4, img_url = $5, is_active = $6, updated_at = $7
 		WHERE id = $8
 	`
 	_, err := r.DB.ExecContext(ctx, query,

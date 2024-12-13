@@ -8,5 +8,5 @@ import (
 
 type UserUseCase interface {
 	GetUser(ctx context.Context, id string) (*entity.User, error)
-	UpsertUser(ctx context.Context, user *model.User) error
+	UpsertUser(ctx context.Context, user *model.UserRequest) error
 }

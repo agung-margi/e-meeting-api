@@ -26,7 +26,7 @@ func (h *userHandler) GetUser(c echo.Context) error {
 }
 
 func (h *userHandler) SaveUser(c echo.Context) error {
-	user := &model.User{}
+	user := &model.UserRequest{}
 	err := c.Bind(user)
 	if err != nil {
 		return c.JSON(500, err)
@@ -39,7 +39,7 @@ func (h *userHandler) SaveUser(c echo.Context) error {
 }
 
 func (h *userHandler) UpdateUser(c echo.Context) error {
-	user := &model.User{}
+	user := &model.UserRequest{}
 	err := c.Bind(user)
 	if err != nil {
 		return c.JSON(500, err)
