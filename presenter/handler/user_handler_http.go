@@ -3,7 +3,11 @@ package handler
 import (
 	"context"
 	"e-meeting-api/internal/usecase"
+	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
+	"e-meeting-api/presenter/response"
+	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -17,25 +21,49 @@ func NewUserHandler(useCase usecase.UserUseCase) UserHandler {
 }
 
 func (h *userHandler) GetUser(c echo.Context) error {
-	id := c.Param("id")
-	user, err := h.useCase.GetUser(context.Background(), id)
+	id, err := strconv.Atoi(c.Param("id"))
+
 	if err != nil {
-		return c.JSON(500, err)
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid user id"))
 	}
-	return c.JSON(200, user)
+
+	user, err := h.useCase.GetUser(c.Request().Context(), strconv.Itoa(id))
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, response.NotFoundResponse("user not found"))
+	}
+	// userResponse := model.UserFromEntity(user)
+
+	return c.JSON(http.StatusOK, response.SuccessResponse("success get user", user))
 }
 
 func (h *userHandler) SaveUser(c echo.Context) error {
 	user := &model.UserRequest{}
 	err := c.Bind(user)
 	if err != nil {
-		return c.JSON(500, err)
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request data"))
 	}
-	err = h.useCase.UpsertUser(context.Background(), user)
+
+	if err := user.Validate(); err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid data: "+err.Error()))
+	}
+
+	hashedPassword, err := util.HashPassword(user.Password)
 	if err != nil {
-		return c.JSON(500, err)
+		return err
 	}
-	return c.JSON(200, user)
+
+	user.Password = hashedPassword
+
+	err = h.useCase.UpsertUser(context.Background(), user)
+
+	if err != nil {
+		if err.Error() == "email already exists" {
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("email already exists"))
+		}
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse("internal server error", http.StatusInternalServerError))
+	}
+	return c.JSON(http.StatusOK, response.SuccessResponse("register succesfully", user))
 }
 
 func (h *userHandler) UpdateUser(c echo.Context) error {

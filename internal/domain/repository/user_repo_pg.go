@@ -82,3 +82,20 @@ func (r *userRepo) DeleteUser(ctx context.Context, id string) error {
 	_, err := r.DB.ExecContext(ctx, query, id)
 	return err
 }
+
+func (r *userRepo) CheckEmailExists(ctx context.Context, email string) (bool, error) {
+
+	var user entity.User
+	query := "SELECT id FROM users WHERE email = $1"
+
+	err := r.DB.QueryRowContext(ctx, query, email).Scan(&user.ID)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}

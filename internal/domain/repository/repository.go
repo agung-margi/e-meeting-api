@@ -10,4 +10,5 @@ type UserRepository interface {
 	SaveUser(ctx context.Context, user *entity.User) error
 	UpdateUser(ctx context.Context, user *entity.User) error
 	DeleteUser(ctx context.Context, id string) error
+	CheckEmailExists(ctx context.Context, email string) (bool, error)
 }

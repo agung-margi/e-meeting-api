@@ -5,6 +5,7 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/presenter/model"
+	"errors"
 )
 
 type userUseCase struct {
@@ -20,12 +21,19 @@ func (u *userUseCase) GetUser(ctx context.Context, id string) (*entity.User, err
 }
 
 func (u *userUseCase) UpsertUser(ctx context.Context, user *model.UserRequest) error {
+	emailExists, err := u.repo.CheckEmailExists(ctx, user.Email)
+	if err != nil {
+		return err
+	}
+
+	if emailExists {
+		return errors.New("email already exists")
+	}
+
 	dataUser := entity.User{
-		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
 		Password: user.Password,
-		// ImgUrl:   user.ImgUrl,
 	}
 	return u.repo.SaveUser(ctx, &dataUser)
 }
