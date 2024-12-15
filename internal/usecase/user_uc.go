@@ -4,8 +4,14 @@ import (
 	"context"
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/internal/domain/repository"
+	"e-meeting-api/pkg/middleware/auth"
 	"e-meeting-api/presenter/model"
 	"errors"
+	"os"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userUseCase struct {
@@ -36,4 +42,36 @@ func (u *userUseCase) UpsertUser(ctx context.Context, user *model.UserRequest) e
 		Password: user.Password,
 	}
 	return u.repo.SaveUser(ctx, &dataUser)
+}
+
+func (u *userUseCase) Login(ctx context.Context, username string, password string) (string, *entity.User, error) {
+	secret := os.Getenv("JWT_SECRET")
+
+	//Check username exists
+	user, err := u.repo.GetByUsername(ctx, username)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if user == nil {
+		return "", nil, errors.New("username or password invalid")
+	}
+
+	//Check password
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return "", nil, errors.New("username or password invalid")
+	}
+
+	claims := jwt.MapClaims{
+		"user_id":  user.ID,
+		"is_admin": user.IsAdmin,
+	}
+
+	token, err := auth.GenerateToken(secret, 24*time.Hour, claims)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return token, user, nil
 }

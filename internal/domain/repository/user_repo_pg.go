@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
 	"errors"
+	"time"
 )
 
 type userRepo struct {
@@ -63,7 +64,9 @@ func (r *userRepo) UpdateUser(ctx context.Context, user *entity.User) error {
 		UPDATE users
 		SET username = $1, email = $2, password = $3, is_admin = $4, img_url = $5, is_active = $6, updated_at = $7
 		WHERE id = $8
+		RETURNING id, username, email, img_url, updated_at
 	`
+	updatedAt := time.Now()
 	_, err := r.DB.ExecContext(ctx, query,
 		user.Username,
 		user.Email,
@@ -71,7 +74,7 @@ func (r *userRepo) UpdateUser(ctx context.Context, user *entity.User) error {
 		user.IsAdmin,
 		user.ImgUrl,
 		user.IsActive,
-		user.UpdatedAt,
+		updatedAt,
 		user.ID,
 	)
 	return err
@@ -98,4 +101,56 @@ func (r *userRepo) CheckEmailExists(ctx context.Context, email string) (bool, er
 	}
 
 	return true, nil
+}
+
+func (r *userRepo) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
+	query := "SELECT id, username, email, password, is_admin, img_url, is_active, created_at, updated_at FROM users WHERE username = $1"
+	row := r.DB.QueryRowContext(ctx, query, username)
+	user := &entity.User{}
+
+	err := row.Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password,
+		&user.IsAdmin,
+		&user.ImgUrl,
+		&user.IsActive,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (r *userRepo) Login(ctx context.Context, username string, password string) (*entity.User, error) {
+	var user entity.User
+	query := "SELECT id, username, email, password, is_admin, img_url, is_active, created_at, updated_at FROM users WHERE username = $1 AND password = $2"
+
+	err := r.DB.QueryRowContext(ctx, query, username, password).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password,
+		&user.IsAdmin,
+		&user.ImgUrl,
+		&user.IsActive,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &user, nil
 }

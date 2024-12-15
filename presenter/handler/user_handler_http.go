@@ -6,6 +6,7 @@ import (
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -68,6 +69,7 @@ func (h *userHandler) SaveUser(c echo.Context) error {
 
 func (h *userHandler) UpdateUser(c echo.Context) error {
 	user := &model.UserRequest{}
+	fmt.Println(user)
 	err := c.Bind(user)
 	if err != nil {
 		return c.JSON(500, err)
@@ -77,4 +79,24 @@ func (h *userHandler) UpdateUser(c echo.Context) error {
 		return c.JSON(500, err)
 	}
 	return c.JSON(200, user)
+}
+
+func (h *userHandler) Login(c echo.Context) error {
+	userReq := &model.UserRequest{}
+
+	if err := c.Bind(userReq); err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request data"))
+	}
+
+	token, _, err := h.useCase.Login(context.Background(), userReq.Username, userReq.Password)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("username or password invalid"))
+	}
+	return c.JSON(http.StatusOK, response.SuccessResponse("success login", map[string]interface{}{
+		"token": token,
+	}))
+}
+
+func (h *userHandler) Logout(c echo.Context) error {
+	return c.JSON(http.StatusOK, response.SuccessResponse("success logout", nil))
 }

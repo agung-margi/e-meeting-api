@@ -39,3 +39,11 @@ func BadRequestResponse(message string) *APIResponse {
 		Data:    nil,
 	}
 }
+
+func UnauthorizedResponse(message string) *APIResponse {
+	return &APIResponse{
+		Status:  http.StatusUnauthorized,
+		Message: message,
+		Data:    nil,
+	}
+}
