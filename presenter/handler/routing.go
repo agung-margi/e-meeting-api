@@ -70,12 +70,15 @@ func RoutingRestAPI(e *echo.Echo) error {
 	e.GET("/rooms/:id", roomHandler.GetRoom, middleware.AuthMiddleware)
 	e.PUT("/rooms/:id", roomHandler.UpdateRoom, middleware.AuthMiddleware)
 
+	// Routing API Reservation
+	reservationRepo := repository.NewReservationRepository(db)
+	reservationUsecase := usecase.NewReservationUseCase(reservationRepo)
+	reservationHandler := NewReservationHandler(reservationUsecase)
+
+	e.POST("/reservations", reservationHandler.SaveReservation)
+
 	return nil
 }
-
-// reservationRepo := repository.NewReservationRepository(db)
-// reservationUsecase := usecase.NewReservationUseCase(reservationRepo)
-// reservationHandler := NewReservationHandler(reservationUsecase)
 
 // 	//Routing API Reservation
 // 	e.GET("/reservations/:id", reservationHandler.GetReservation)

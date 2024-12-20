@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"e-meeting-api/internal/domain/entity"
+	"e-meeting-api/presenter/model"
 )
 
 type UserRepository interface {
@@ -12,13 +13,6 @@ type UserRepository interface {
 	UpdateUser(ctx context.Context, id int, user *entity.User) error
 	DeleteUser(ctx context.Context, id string) error
 	CheckEmailExists(ctx context.Context, email string) (bool, error)
-}
-
-type ReservationRepository interface {
-	GetByID(ctx context.Context, id int) (*entity.Reservation, error)
-	SaveReservation(ctx context.Context, rsv *entity.Reservation) error
-	CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error)
-	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]*entity.Reservation, error)
 }
 
 type SnackRepository interface {
@@ -38,4 +32,14 @@ type RoomRepository interface {
 	GetByID(ctx context.Context, id int) (*entity.RoomWithType, error)
 	SaveRoom(ctx context.Context, room *entity.Room) error
 	UpdateRoom(ctx context.Context, id int, room *entity.Room) error
+}
+
+type ReservationRepository interface {
+	GetByID(ctx context.Context, id int) (*entity.Reservation, error)
+	SaveReservation(ctx context.Context, reservation *entity.Reservation, details *entity.ReservationDetails) error
+	CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error)
+	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]*entity.Reservation, error)
+	GetRoomPriceByID(ctx context.Context, roomID int) (int, error)
+	GetSnackPriceByID(ctx context.Context, snackID int) (int, error)
+	GetReservationDetails(ctx context.Context, reservationID int) ([]model.ReservationDetailsResponse, error)
 }

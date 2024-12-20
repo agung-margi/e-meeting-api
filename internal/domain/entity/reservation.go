@@ -13,6 +13,19 @@ type Reservation struct {
 	SnackPrice  int       `json:"snackPrice"`
 	TotalPrice  int       `json:"totalPrice"`
 	Status      string    `json:"status"`
-	CreatedAt   string    `json:"createdAt"`
-	UpdatedAt   string    `json:"updatedAt"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+type ReservationDetails struct {
+	ID            int       `json:"id"`
+	ReservationID int       `json:"reservationId"`
+	Name          string    `json:"name"`
+	Phone         string    `json:"phone"`
+	Company       string    `json:"company"`
+	SnackID       int       `json:"snackId"`
+	Participants  int       `json:"participants"`
+	Notes         string    `json:"notes"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
 }

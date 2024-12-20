@@ -13,6 +13,31 @@ definitions:
     - password
     - username
     type: object
+  model.ReservationRequest:
+    properties:
+      bookingDate:
+        type: string
+      company:
+        type: string
+      endTime:
+        type: string
+      name:
+        type: string
+      notes:
+        type: string
+      participants:
+        type: integer
+      phone:
+        type: string
+      roomId:
+        type: integer
+      snackId:
+        type: integer
+      startTime:
+        type: string
+      userId:
+        type: integer
+    type: object
   model.RoomRequest:
     properties:
       capacity:
@@ -129,6 +154,38 @@ paths:
       summary: Logout user
       tags:
       - Authentication
+  /reservations:
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan reservation
+      parameters:
+      - description: Reservation Request
+        in: body
+        name: reservation
+        required: true
+        schema:
+          $ref: '#/definitions/model.ReservationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Save reservation
+      tags:
+      - Reservation
   /rooms:
     get:
       consumes:

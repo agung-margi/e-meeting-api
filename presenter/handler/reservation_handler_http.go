@@ -1,14 +1,12 @@
 package handler
 
 import (
-	"context"
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -33,36 +31,6 @@ func (h *reservationHandler) GetReservation(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response.SuccessResponse("success get reservation", reservation))
-}
-
-func (h *reservationHandler) SaveReservation(c echo.Context) error {
-
-	reservation := &model.ReservationRequest{}
-	err := c.Bind(reservation)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request data"))
-	}
-	savedReservation, err := h.useCase.SaveReservation(context.Background(), reservation)
-	if err != nil {
-		fmt.Println("Error saving reservation:", err)
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse("internal server error", http.StatusInternalServerError))
-	}
-
-	responseData := model.ReservationResponse{
-		ReservationID: savedReservation.ID,
-		UserID:        savedReservation.UserID,
-		RoomID:        savedReservation.RoomID,
-		StartTime:     savedReservation.StartTime.Format(time.RFC3339),
-		EndTime:       savedReservation.EndTime.Format(time.RFC3339),
-		BookingDate:   savedReservation.BookingDate,
-		RoomPrice:     savedReservation.RoomPrice,
-		SnackPrice:    savedReservation.SnackPrice,
-		TotalPrice:    savedReservation.TotalPrice,
-		Status:        "booked",
-	}
-
-	// Return the structured response
-	return c.JSON(http.StatusOK, response.SuccessResponse("success save reservation", responseData))
 }
 
 func (h *reservationHandler) CheckAvailability(c echo.Context) error {
@@ -100,4 +68,32 @@ func (h *reservationHandler) CheckRoomSchedule(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response.SuccessResponse("success get room schedule", reservations))
+}
+
+// SaveReservation
+// @Summary Save reservation
+// @Description Menyimpan reservation
+// @Tags Reservation
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param reservation body model.ReservationRequest true "Reservation Request"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /reservations [post]
+func (h *reservationHandler) SaveReservation(c echo.Context) error {
+	var req model.ReservationRequest
+	if err := c.Bind(&req); err != nil {
+		log.Printf("Error binding request: %v", err)
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request body"))
+	}
+
+	reservation, err := h.useCase.SaveReservation(c.Request().Context(), &req)
+	if err != nil {
+		log.Printf("Error saving reservation: %v", err)
+		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to save reservation"))
+	}
+
+	return c.JSON(http.StatusOK, response.SuccessResponse("reservation saved successfully", reservation))
 }

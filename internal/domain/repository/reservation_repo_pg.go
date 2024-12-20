@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
+	"e-meeting-api/presenter/model"
 	"errors"
 )
 
@@ -41,36 +42,6 @@ func (r *reservationRepo) GetByID(ctx context.Context, id int) (*entity.Reservat
 	}
 	return roomReservation, nil
 }
-
-func (r *reservationRepo) SaveReservation(ctx context.Context, rsv *entity.Reservation) error {
-	query := "INSERT INTO reservations (user_id, room_id, start_time, end_time, booking_date, room_price, snack_price, total_price, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id"
-	err := r.DB.QueryRowContext(ctx, query,
-		rsv.UserID,
-		rsv.RoomID,
-		rsv.StartTime,
-		rsv.EndTime,
-		rsv.BookingDate,
-		rsv.RoomPrice,
-		rsv.SnackPrice,
-		rsv.TotalPrice,
-		rsv.Status,
-	).Scan(&rsv.ID)
-
-	return err
-}
-
-// func (r *reservationRepo) SaveReservationDetail(ctx context.Context, rsvd *entity.ReservationDetail) error {
-// 	query := "INSERT INTO reservation_details (resevation_id, name, phone, company, snack_id, participants) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
-// 	err := r.DB.QueryRowContext(ctx, query,
-// 		rsvd.ReservationID,
-// 		rsvd.Name,
-// 		rsvd.Phone,
-// 		rsvd.Company,
-// 		rsvd.SnackID,
-// 		rsvd.Participants,
-// 	).Scan(&rsvd.ID)
-// 	return err
-// }
 
 func (r *reservationRepo) CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error) {
 	query := `
@@ -132,4 +103,111 @@ func (r *reservationRepo) GetReservationsByRoomAndDate(ctx context.Context, room
 	}
 
 	return reservations, nil
+}
+
+func (r *reservationRepo) GetSnackPriceByID(ctx context.Context, snackID int) (int, error) {
+	var price int
+	query := "SELECT price FROM snacks WHERE id = $1"
+	err := r.DB.QueryRowContext(ctx, query, snackID).Scan(&price)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return price, nil
+}
+
+func (r *reservationRepo) GetRoomPriceByID(ctx context.Context, roomID int) (int, error) {
+	var price int
+	query := "SELECT price FROM rooms WHERE id = $1"
+	err := r.DB.QueryRowContext(ctx, query, roomID).Scan(&price)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return price, nil
+}
+func (r *reservationRepo) SaveReservation(ctx context.Context, reservation *entity.Reservation, details *entity.ReservationDetails) error {
+	query := "INSERT INTO reservations (user_id, room_id, start_time, end_time, booking_date, room_price, snack_price, total_price, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now(), now()) RETURNING id"
+	row := r.DB.QueryRowContext(ctx, query,
+		reservation.UserID,
+		reservation.RoomID,
+		reservation.StartTime,
+		reservation.EndTime,
+		reservation.BookingDate,
+		reservation.RoomPrice,
+		reservation.SnackPrice,
+		reservation.TotalPrice,
+		"booked",
+	)
+	if err := row.Scan(&reservation.ID); err != nil {
+		return err
+	}
+
+	details.ReservationID = reservation.ID
+
+	querydetails := "INSERT INTO reservation_details (reservation_id, name, phone, company, snack_id, participants, notes) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
+
+	detail := r.DB.QueryRowContext(ctx, querydetails,
+		details.ReservationID,
+		details.Name,
+		details.Phone,
+		details.Company,
+		details.SnackID,
+		details.Participants,
+		details.Notes)
+	if err := detail.Scan(&details.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservationID int) ([]model.ReservationDetailsResponse, error) {
+	query := `
+			SELECT
+					rd.reservation_id,
+					rd.name,
+					rd.phone,
+					rd.company,
+					rd.snack_id,
+					rd.participants,
+					rd.notes
+			FROM
+					reservation_details rd
+			WHERE
+					rd.reservation_id = $1
+	`
+
+	rows, err := r.DB.QueryContext(ctx, query, reservationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var details []model.ReservationDetailsResponse
+	for rows.Next() {
+		var detail model.ReservationDetailsResponse
+		if err := rows.Scan(
+			&detail.ReservationID,
+			&detail.Name,
+			&detail.Phone,
+			&detail.Company,
+			&detail.SnackID,
+			&detail.Participants,
+			&detail.Notes,
+		); err != nil {
+			return nil, err
+		}
+		details = append(details, detail)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return details, nil
 }
