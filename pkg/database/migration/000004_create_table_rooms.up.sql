@@ -1,7 +1,7 @@
 CREATE TABLE rooms (
 	id serial4 NOT NULL,
 	"name" varchar(100) NOT NULL,
-	room_type_id int4 NULL,
+	room_type_id int4 NOT NULL,
 	capacity int4 NOT NULL,
 	price int4 NOT NULL,
 	img_url varchar(255) NOT NULL,

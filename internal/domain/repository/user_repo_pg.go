@@ -16,7 +16,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepo{DB: db}
 }
 
-func (r *userRepo) GetByID(ctx context.Context, id string) (*entity.User, error) {
+func (r *userRepo) GetByID(ctx context.Context, id int) (*entity.User, error) {
 	query := "SELECT id, username, email, password, is_admin, img_url, is_active, created_at, updated_at FROM users WHERE id = $1"
 	row := r.DB.QueryRowContext(ctx, query, id)
 	user := &entity.User{}
@@ -59,23 +59,18 @@ func (r *userRepo) SaveUser(ctx context.Context, user *entity.User) error {
 	return err
 }
 
-func (r *userRepo) UpdateUser(ctx context.Context, user *entity.User) error {
+func (r *userRepo) UpdateUser(ctx context.Context, id int, user *entity.User) error {
 	query := `
-		UPDATE users
-		SET username = $1, email = $2, password = $3, is_admin = $4, img_url = $5, is_active = $6, updated_at = $7
-		WHERE id = $8
-		RETURNING id, username, email, img_url, updated_at
+			UPDATE users
+			SET password = $1, img_url = $2, is_active = $3, updated_at = $4
+			WHERE id = $5
 	`
-	updatedAt := time.Now()
 	_, err := r.DB.ExecContext(ctx, query,
-		user.Username,
-		user.Email,
 		user.Password,
-		user.IsAdmin,
 		user.ImgUrl,
 		user.IsActive,
-		updatedAt,
-		user.ID,
+		time.Now(), // Use current timestamp for updated_at
+		id,
 	)
 	return err
 }
@@ -127,30 +122,4 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*entity.
 	}
 
 	return user, nil
-}
-
-func (r *userRepo) Login(ctx context.Context, username string, password string) (*entity.User, error) {
-	var user entity.User
-	query := "SELECT id, username, email, password, is_admin, img_url, is_active, created_at, updated_at FROM users WHERE username = $1 AND password = $2"
-
-	err := r.DB.QueryRowContext(ctx, query, username, password).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.Password,
-		&user.IsAdmin,
-		&user.ImgUrl,
-		&user.IsActive,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &user, nil
 }

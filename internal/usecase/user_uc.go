@@ -4,7 +4,7 @@ import (
 	"context"
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/internal/domain/repository"
-	"e-meeting-api/pkg/middleware/auth"
+	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"errors"
 	"os"
@@ -22,11 +22,12 @@ func NewStudentUseCase(repo repository.UserRepository) UserUseCase {
 	return &userUseCase{repo: repo}
 }
 
-func (u *userUseCase) GetUser(ctx context.Context, id string) (*entity.User, error) {
+func (u *userUseCase) GetUser(ctx context.Context, id int) (*entity.User, error) {
 	return u.repo.GetByID(ctx, id)
 }
 
-func (u *userUseCase) UpsertUser(ctx context.Context, user *model.UserRequest) error {
+func (u *userUseCase) SaveUser(ctx context.Context, user *model.UserRequest) error {
+
 	emailExists, err := u.repo.CheckEmailExists(ctx, user.Email)
 	if err != nil {
 		return err
@@ -42,6 +43,24 @@ func (u *userUseCase) UpsertUser(ctx context.Context, user *model.UserRequest) e
 		Password: user.Password,
 	}
 	return u.repo.SaveUser(ctx, &dataUser)
+}
+
+func (u *userUseCase) UpdateUser(ctx context.Context, id int, user *model.UpdateUserRequest) error {
+	existingUser, err := u.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if existingUser == nil {
+		return errors.New("user not found")
+	}
+
+	updatedUser := &entity.User{
+		Password:  user.Password,
+		ImgUrl:    user.ImgUrl,
+		IsActive:  user.IsActive,
+		UpdatedAt: time.Now(),
+	}
+	return u.repo.UpdateUser(ctx, id, updatedUser)
 }
 
 func (u *userUseCase) Login(ctx context.Context, username string, password string) (string, *entity.User, error) {
@@ -68,7 +87,7 @@ func (u *userUseCase) Login(ctx context.Context, username string, password strin
 		"is_admin": user.IsAdmin,
 	}
 
-	token, err := auth.GenerateToken(secret, 24*time.Hour, claims)
+	token, err := util.GenerateToken(secret, 24*time.Hour, claims)
 	if err != nil {
 		return "", nil, err
 	}

@@ -47,3 +47,19 @@ func UnauthorizedResponse(message string) *APIResponse {
 		Data:    nil,
 	}
 }
+
+func ForbiddenResponse(message string) *APIResponse {
+	return &APIResponse{
+		Status:  http.StatusForbidden,
+		Message: message,
+		Data:    nil,
+	}
+}
+
+func InternalServerErrorResponse(message string) *APIResponse {
+	return &APIResponse{
+		Status:  http.StatusInternalServerError,
+		Message: message,
+		Data:    nil,
+	}
+}

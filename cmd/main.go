@@ -2,9 +2,14 @@ package main
 
 import (
 	"e-meeting-api/presenter/handler"
+	_ "e-meeting-api/presenter/handler/docs"
 
 	"github.com/labstack/echo/v4"
 )
+
+// @SecurityDefinitions.apikey ApiKeyAuth
+// @In header
+// @Name Authorization
 
 func main() {
 	e := echo.New()
