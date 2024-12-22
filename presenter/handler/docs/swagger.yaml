@@ -15,8 +15,6 @@ definitions:
     type: object
   model.ReservationRequest:
     properties:
-      bookingDate:
-        type: string
       company:
         type: string
       endTime:
@@ -35,11 +33,10 @@ definitions:
         type: integer
       startTime:
         type: string
-      status:
-        default: booked
-        type: string
       userId:
         type: integer
+    required:
+    - userId
     type: object
   model.RoomRequest:
     properties:
@@ -242,6 +239,68 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get reservation by id
+      tags:
+      - Reservation
+  /reservations/{id}/cancel:
+    put:
+      consumes:
+      - application/json
+      description: Membatalkan reservation
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel reservation
+      tags:
+      - Reservation
+  /reservations/{id}/pay:
+    put:
+      consumes:
+      - application/json
+      description: Melakukan pembayaran reservation
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Pay reservation
       tags:
       - Reservation
   /rooms:

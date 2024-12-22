@@ -292,3 +292,9 @@ func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entit
 
 	return reservations, nil
 }
+
+func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationID int, status string) error {
+	query := "UPDATE reservations SET status = $1 WHERE id = $2"
+	_, err := r.DB.ExecContext(ctx, query, status, reservationID)
+	return err
+}

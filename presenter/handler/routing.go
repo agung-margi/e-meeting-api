@@ -66,8 +66,8 @@ func RoutingRestAPI(e *echo.Echo) error {
 	roomHandler := NewRoomHandler(roomUsecase)
 
 	e.GET("/rooms", roomHandler.GetRooms, middleware.AuthMiddleware)
-	e.POST("/rooms", roomHandler.SaveRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 	e.GET("/rooms/:id", roomHandler.GetRoom, middleware.AuthMiddleware)
+	e.POST("/rooms", roomHandler.SaveRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 	e.PUT("/rooms/:id", roomHandler.UpdateRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 
 	// Routing API Reservation
@@ -78,6 +78,9 @@ func RoutingRestAPI(e *echo.Echo) error {
 	e.POST("/reservations", reservationHandler.SaveReservation, middleware.AuthMiddleware)
 	e.GET("/reservations/:id", reservationHandler.GetReservation, middleware.AuthMiddleware)
 	e.GET("/reservations", reservationHandler.GetReservations, middleware.AuthMiddleware)
+	e.PUT("/reservations/:id/pay", reservationHandler.PayReservation, middleware.AuthMiddleware)
+	e.PUT("/reservations/:id/cancel", reservationHandler.CancelReservation, middleware.AuthMiddleware)
+	// e.GET("/get-availability", reservationHandler.CheckAvailability)
 
 	return nil
 }

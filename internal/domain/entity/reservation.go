@@ -8,7 +8,7 @@ type Reservation struct {
 	RoomID      int       `json:"roomId"`
 	StartTime   time.Time `json:"startTime"`
 	EndTime     time.Time `json:"endTime"`
-	BookingDate string    `json:"bookingDate"`
+	BookingDate time.Time `json:"bookingDate"`
 	RoomPrice   int       `json:"roomPrice"`
 	SnackPrice  int       `json:"snackPrice"`
 	TotalPrice  int       `json:"totalPrice"`

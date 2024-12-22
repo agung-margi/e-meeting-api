@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -41,7 +42,7 @@ func (h *reservationHandler) GetReservation(c echo.Context) error {
 	userIDinterface := c.Get("user_id")
 	userIDfloat, ok := userIDinterface.(float64)
 	if !ok {
-		return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("invalid token claims"))
+		return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("unauthorized"))
 	}
 	userID := int(userIDfloat)
 	isAdmin := c.Get("is_admin").(bool)
@@ -71,19 +72,32 @@ func (h *reservationHandler) GetReservation(c echo.Context) error {
 // @Failure 500 {object} response.APIResponse
 // @Router /reservations [post]
 func (h *reservationHandler) SaveReservation(c echo.Context) error {
+
+	userId := c.Get("user_id").(float64)
+
 	var req model.ReservationRequest
 	if err := c.Bind(&req); err != nil {
 		log.Printf("Error binding request: %v", err)
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request body"))
 	}
 
-	reservation, err := h.useCase.SaveReservation(c.Request().Context(), &req)
+	req.UserID = int(userId)
+
+	reservation, err := h.useCase.SaveReservation(c.Request().Context(), &req, int(userId))
 	if err != nil {
 		log.Printf("Error saving reservation: %v", err)
+
+		if strings.Contains(err.Error(), "invalid reservation start time") {
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse(err.Error()))
+		}
+		if strings.Contains(err.Error(), "room is not available") {
+			return c.JSON(http.StatusConflict, response.ErrorResponse(err.Error(), http.StatusConflict))
+		}
+
 		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to save reservation"))
 	}
 
-	return c.JSON(http.StatusOK, response.SuccessResponse("reservation saved successfully", reservation))
+	return c.JSON(http.StatusOK, response.SuccessResponse("New Reservation Success Added", reservation))
 }
 
 // GetReservations
@@ -161,4 +175,88 @@ func (h *reservationHandler) CheckRoomSchedule(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response.SuccessResponse("success get room schedule", reservations))
+}
+
+// CancelReservation
+// @Summary Cancel reservation
+// @Description Membatalkan reservation
+// @Tags Reservation
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Reservation ID"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /reservations/{id}/cancel [put]
+func (h *reservationHandler) CancelReservation(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid reservation id"))
+	}
+
+	userId := c.Get("user_id").(float64)
+	isAdmin := c.Get("is_admin").(bool)
+
+	err = h.useCase.PayReservation(c.Request().Context(), id, int(userId), isAdmin)
+	if err != nil {
+		switch err.Error() {
+		case "unauthorized":
+			return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("unauthorized"))
+		case "reservation that has already been paid":
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot cancel a reservation that has already been paid"))
+		case "reservation that has already started":
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot cancel a reservation that has already started"))
+		case "reservation that has already ended":
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot cancel a reservation that has already ended"))
+		case "reservation that has already been cancelled":
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot cancel a reservation that has already been cancelled"))
+		default:
+			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to cancel reservation"))
+		}
+	}
+
+	return c.JSON(http.StatusOK, response.SuccessResponse("success cancel reservation", nil))
+}
+
+// PayReservation
+// @Summary Pay reservation
+// @Description Melakukan pembayaran reservation
+// @Tags Reservation
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Reservation ID"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /reservations/{id}/pay [put]
+func (h *reservationHandler) PayReservation(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid reservation id"))
+	}
+
+	userId := c.Get("user_id").(float64)
+	isAdmin := c.Get("is_admin").(bool)
+
+	err = h.useCase.PayReservation(c.Request().Context(), id, int(userId), isAdmin)
+	if err != nil {
+		switch err.Error() {
+		case "unauthorized":
+			return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("unauthorized"))
+		case "reservation that has already been paid":
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot pay for a reservation that has already been paid"))
+		case "reservation that has already started":
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot pay for a reservation that has already started"))
+		case "reservation that has already ended":
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot pay for a reservation that has already ended"))
+		case "reservation that has already been cancelled":
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot pay for a reservation that has already been cancelled"))
+		default:
+			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to process payment"))
+		}
+	}
+
+	return c.JSON(http.StatusOK, response.SuccessResponse("success pay reservation", nil))
 }

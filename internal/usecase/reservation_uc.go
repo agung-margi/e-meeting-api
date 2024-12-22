@@ -5,7 +5,7 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/presenter/model"
-	"fmt"
+	"errors"
 	"log"
 	"time"
 )
@@ -35,17 +35,96 @@ func (u *reservationUseCase) GetReservationsByRoomAndDate(ctx context.Context, r
 	return u.repo.GetReservationsByRoomAndDate(ctx, roomId, date)
 }
 
-func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationRequest *model.ReservationRequest) (*model.ReservationResponse, error) {
+func (u *reservationUseCase) GetAll(ctx context.Context) ([]*entity.Reservation, error) {
+	return u.repo.GetAll(ctx)
+}
+
+func (u *reservationUseCase) GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error) {
+	return u.repo.GetByUserID(ctx, userID)
+}
+func (u *reservationUseCase) PayReservation(ctx context.Context, id int, userId int, isAdmin bool) error {
+
+	reservation, err := u.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if reservation.UserID != userId && !isAdmin {
+		return errors.New("unauthorized")
+	}
+
+	// validasi status pembayaran
+	if reservation.Status == "paid" {
+		return errors.New("reservation that has already been paid")
+	}
+
+	if time.Now().After(reservation.StartTime) {
+		return errors.New("reservation that has already started")
+	}
+
+	if time.Now().After(reservation.EndTime) {
+		return errors.New("reservation that has already ended")
+	}
+
+	if reservation.Status == "cancelled" {
+		return errors.New("reservation that has already been cancelled")
+	}
+
+	return u.repo.UpdateStatus(ctx, id, "paid")
+}
+
+func (u *reservationUseCase) CancelReservation(ctx context.Context, id int, userId int, isAdmin bool) error {
+	reservation, err := u.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if reservation.Status == "paid" {
+		return errors.New("reservation that has already been paid")
+	}
+
+	if time.Now().After(reservation.StartTime) {
+		return errors.New("reservation that has already started")
+	}
+
+	if time.Now().After(reservation.EndTime) {
+		return errors.New("reservation that has already ended")
+	}
+
+	if reservation.Status == "cancelled" {
+		return errors.New("reservation that has already been cancelled")
+	}
+
+	return u.repo.UpdateStatus(ctx, id, "cancelled")
+}
+
+func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationRequest *model.ReservationRequest, userId int) (*model.ReservationResponse, error) {
 
 	startTime, err := time.Parse(time.RFC3339, reservationRequest.StartTime)
 	if err != nil {
-		log.Printf("Error parsing start time: %v", err)
 		return nil, err
 	}
 	endTime, err := time.Parse(time.RFC3339, reservationRequest.EndTime)
 	if err != nil {
-		log.Printf("Error parsing end time: %v", err)
 		return nil, err
+	}
+
+	if startTime.After(endTime) {
+		return nil, errors.New("invalid reservation duration: start time should be before end time")
+	}
+
+	if startTime.Before(time.Now()) {
+		return nil, errors.New("invalid reservation start time: start time should be in the future")
+	}
+
+	avalilable, err := u.CheckAvailability(ctx, reservationRequest.RoomID, reservationRequest.StartTime, reservationRequest.EndTime)
+	if err != nil {
+		log.Printf("Error checking availability: %v", err)
+		return nil, err
+	}
+
+	if !avalilable {
+		return nil, errors.New("room is not available for the selected date and time")
 	}
 
 	roomPricePerHour, err := u.repo.GetRoomPriceByID(ctx, reservationRequest.RoomID)
@@ -56,11 +135,10 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 
 	duration := endTime.Sub(startTime).Hours()
 	if duration <= 0 {
-		return nil, fmt.Errorf("invalid reservation duration: start time should be before end time")
+		return nil, errors.New("invalid reservation duration: start time should be before end time")
 	}
 	totalRoomPrice := int(duration) * roomPricePerHour
 
-	// Jika snack ID tidak ada, set snackPrice ke 0
 	snackPrice := 0
 
 	if reservationRequest.SnackID != nil {
@@ -76,11 +154,11 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 	totalPrice := totalRoomPrice + totalSnackPrice
 
 	reservation := &entity.Reservation{
-		UserID:      reservationRequest.UserID,
+		UserID:      userId,
 		RoomID:      reservationRequest.RoomID,
 		StartTime:   startTime,
 		EndTime:     endTime,
-		BookingDate: reservationRequest.BookingDate,
+		BookingDate: time.Now(),
 		RoomPrice:   totalRoomPrice,
 		SnackPrice:  totalSnackPrice,
 		TotalPrice:  totalPrice,
@@ -114,7 +192,7 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 		RoomID:        reservation.RoomID,
 		StartTime:     reservation.StartTime,
 		EndTime:       reservation.EndTime,
-		BookingDate:   reservation.BookingDate,
+		BookingDate:   time.Now(),
 		RoomPrice:     reservation.RoomPrice,
 		SnackPrice:    reservation.SnackPrice,
 		TotalPrice:    reservation.TotalPrice,
@@ -123,12 +201,4 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 	}
 
 	return response, nil
-}
-
-func (u *reservationUseCase) GetAll(ctx context.Context) ([]*entity.Reservation, error) {
-	return u.repo.GetAll(ctx)
-}
-
-func (u *reservationUseCase) GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error) {
-	return u.repo.GetByUserID(ctx, userID)
 }

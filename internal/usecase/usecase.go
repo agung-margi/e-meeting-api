@@ -15,11 +15,13 @@ type UserUseCase interface {
 
 type ReservationUseCase interface {
 	GetReservation(ctx context.Context, id int) (*entity.Reservation, error)
-	SaveReservation(ctx context.Context, reservationRequest *model.ReservationRequest) (*model.ReservationResponse, error)
+	SaveReservation(ctx context.Context, reservationRequest *model.ReservationRequest, userId int) (*model.ReservationResponse, error)
 	CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error)
 	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]*entity.Reservation, error)
 	GetAll(ctx context.Context) ([]*entity.Reservation, error)
 	GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error)
+	PayReservation(ctx context.Context, id int, userId int, isAdmin bool) error
+	CancelReservation(ctx context.Context, id int, userId int, isAdmin bool) error
 }
 
 type SnackUseCase interface {

@@ -44,4 +44,5 @@ type ReservationRepository interface {
 	GetReservationDetails(ctx context.Context, reservationID int) ([]model.ReservationDetailsResponse, error)
 	GetAll(ctx context.Context) ([]*entity.Reservation, error)
 	GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error)
+	UpdateStatus(ctx context.Context, id int, status string) error
 }
