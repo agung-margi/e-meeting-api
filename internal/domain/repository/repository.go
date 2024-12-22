@@ -42,4 +42,6 @@ type ReservationRepository interface {
 	GetRoomPriceByID(ctx context.Context, roomID int) (int, error)
 	GetSnackPriceByID(ctx context.Context, snackID int) (int, error)
 	GetReservationDetails(ctx context.Context, reservationID int) ([]model.ReservationDetailsResponse, error)
+	GetAll(ctx context.Context) ([]*entity.Reservation, error)
+	GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error)
 }

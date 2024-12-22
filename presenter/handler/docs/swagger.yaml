@@ -35,6 +35,9 @@ definitions:
         type: integer
       startTime:
         type: string
+      status:
+        default: booked
+        type: string
       userId:
         type: integer
     type: object
@@ -155,6 +158,30 @@ paths:
       tags:
       - Authentication
   /reservations:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan semua reservation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all reservations
+      tags:
+      - Reservation
     post:
       consumes:
       - application/json
@@ -184,6 +211,37 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Save reservation
+      tags:
+      - Reservation
+  /reservations/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan reservation berdasarkan id
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get reservation by id
       tags:
       - Reservation
   /rooms:

@@ -66,22 +66,24 @@ func RoutingRestAPI(e *echo.Echo) error {
 	roomHandler := NewRoomHandler(roomUsecase)
 
 	e.GET("/rooms", roomHandler.GetRooms, middleware.AuthMiddleware)
-	e.POST("/rooms", roomHandler.SaveRoom, middleware.AuthMiddleware)
+	e.POST("/rooms", roomHandler.SaveRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 	e.GET("/rooms/:id", roomHandler.GetRoom, middleware.AuthMiddleware)
-	e.PUT("/rooms/:id", roomHandler.UpdateRoom, middleware.AuthMiddleware)
+	e.PUT("/rooms/:id", roomHandler.UpdateRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 
 	// Routing API Reservation
 	reservationRepo := repository.NewReservationRepository(db)
 	reservationUsecase := usecase.NewReservationUseCase(reservationRepo)
 	reservationHandler := NewReservationHandler(reservationUsecase)
 
-	e.POST("/reservations", reservationHandler.SaveReservation)
+	e.POST("/reservations", reservationHandler.SaveReservation, middleware.AuthMiddleware)
+	e.GET("/reservations/:id", reservationHandler.GetReservation, middleware.AuthMiddleware)
+	e.GET("/reservations", reservationHandler.GetReservations, middleware.AuthMiddleware)
 
 	return nil
 }
 
 // 	//Routing API Reservation
-// 	e.GET("/reservations/:id", reservationHandler.GetReservation)
+
 // 	e.POST("/reservations", reservationHandler.SaveReservation)
 // 	e.GET("/get-availability", reservationHandler.CheckAvailability)
 // 	e.GET("/get-room-schedule", reservationHandler.CheckRoomSchedule)

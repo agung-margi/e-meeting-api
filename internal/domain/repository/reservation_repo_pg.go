@@ -191,16 +191,23 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 	var details []model.ReservationDetailsResponse
 	for rows.Next() {
 		var detail model.ReservationDetailsResponse
+		var snackID sql.NullInt64
 		if err := rows.Scan(
 			&detail.ReservationID,
 			&detail.Name,
 			&detail.Phone,
 			&detail.Company,
-			&detail.SnackID,
+			&snackID,
 			&detail.Participants,
 			&detail.Notes,
 		); err != nil {
 			return nil, err
+		}
+
+		if snackID.Valid {
+			detail.SnackID = int(snackID.Int64)
+		} else {
+			detail.SnackID = 0
 		}
 		details = append(details, detail)
 	}
@@ -210,4 +217,78 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 	}
 
 	return details, nil
+}
+
+func (r *reservationRepo) GetAll(ctx context.Context) ([]*entity.Reservation, error) {
+	query := "SELECT * FROM reservations"
+	rows, err := r.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reservations []*entity.Reservation
+	for rows.Next() {
+		var reservation entity.Reservation
+		if err := rows.Scan(
+			&reservation.ID,
+			&reservation.UserID,
+			&reservation.RoomID,
+			&reservation.StartTime,
+			&reservation.EndTime,
+			&reservation.BookingDate,
+			&reservation.RoomPrice,
+			&reservation.SnackPrice,
+			&reservation.TotalPrice,
+			&reservation.Status,
+			&reservation.CreatedAt,
+			&reservation.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		reservations = append(reservations, &reservation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return reservations, nil
+}
+
+func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error) {
+	query := "SELECT * FROM reservations WHERE user_id = $1"
+	rows, err := r.DB.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reservations []*entity.Reservation
+	for rows.Next() {
+		var reservation entity.Reservation
+		if err := rows.Scan(
+			&reservation.ID,
+			&reservation.UserID,
+			&reservation.RoomID,
+			&reservation.StartTime,
+			&reservation.EndTime,
+			&reservation.BookingDate,
+			&reservation.RoomPrice,
+			&reservation.SnackPrice,
+			&reservation.TotalPrice,
+			&reservation.Status,
+			&reservation.CreatedAt,
+			&reservation.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		reservations = append(reservations, &reservation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return reservations, nil
 }

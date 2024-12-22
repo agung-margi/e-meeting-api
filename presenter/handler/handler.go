@@ -13,8 +13,8 @@ type UserHandler interface {
 }
 
 type ReservationHandler interface {
-	// GetReservation(c echo.Context) error
-	// // GetAll(c echo.Context) error
+	GetReservation(c echo.Context) error
+	GetReservations(c echo.Context) error
 	SaveReservation(c echo.Context) error
 	// // Update(c echo.Context) error
 	// // Delete(c echo.Context) error

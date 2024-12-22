@@ -7,7 +7,7 @@ CREATE TABLE reservations (
 	end_time timestamp NOT NULL,
 	booking_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
 	room_price int4 NOT NULL,
-	snack_price int4 NOT NULL,
+	snack_price int4 NULL,
 	total_price int4 NOT NULL,
 	status varchar(15) NOT NULL,
 	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,

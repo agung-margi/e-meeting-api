@@ -8,10 +8,11 @@ type ReservationRequest struct {
 	StartTime    string `json:"startTime"`
 	EndTime      string `json:"endTime"`
 	BookingDate  string `json:"bookingDate"`
+	Status       string `json:"status" default:"booked"`
 	Name         string `json:"name"`
 	Phone        string `json:"phone"`
 	Company      string `json:"company"`
-	SnackID      int    `json:"snackId"`
+	SnackID      *int   `json:"snackId"`
 	Participants int    `json:"participants"`
 	Notes        string `json:"notes"`
 }

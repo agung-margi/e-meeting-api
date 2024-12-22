@@ -36,3 +36,13 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 	}
 }
+
+func IsAdminMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		isAdmin := c.Get("is_admin").(bool)
+		if !isAdmin {
+			return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("Unauthorized"))
+		}
+		return next(c)
+	}
+}

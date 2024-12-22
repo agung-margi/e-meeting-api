@@ -23,7 +23,7 @@ type ReservationDetails struct {
 	Name          string    `json:"name"`
 	Phone         string    `json:"phone"`
 	Company       string    `json:"company"`
-	SnackID       int       `json:"snackId"`
+	SnackID       *int      `json:"snackId"`
 	Participants  int       `json:"participants"`
 	Notes         string    `json:"notes"`
 	CreatedAt     time.Time `json:"createdAt"`

@@ -60,12 +60,18 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 	}
 	totalRoomPrice := int(duration) * roomPricePerHour
 
-	snackPrice, err := u.repo.GetSnackPriceByID(ctx, reservationRequest.SnackID)
-	if err != nil {
-		log.Printf("Error retrieving snack price: %v", err)
-		return nil, err
+	// Jika snack ID tidak ada, set snackPrice ke 0
+	snackPrice := 0
+
+	if reservationRequest.SnackID != nil {
+		snackPrice, err = u.repo.GetSnackPriceByID(ctx, *reservationRequest.SnackID)
+		if err != nil {
+			log.Printf("Error retrieving snack price: %v", err)
+			return nil, err
+		}
 	}
 
+	snackID := reservationRequest.SnackID
 	totalSnackPrice := snackPrice * reservationRequest.Participants
 	totalPrice := totalRoomPrice + totalSnackPrice
 
@@ -87,7 +93,7 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 		Name:         reservationRequest.Name,
 		Phone:        reservationRequest.Phone,
 		Company:      reservationRequest.Company,
-		SnackID:      reservationRequest.SnackID,
+		SnackID:      snackID,
 		Participants: reservationRequest.Participants,
 		Notes:        reservationRequest.Notes,
 	})
@@ -117,4 +123,12 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 	}
 
 	return response, nil
+}
+
+func (u *reservationUseCase) GetAll(ctx context.Context) ([]*entity.Reservation, error) {
+	return u.repo.GetAll(ctx)
+}
+
+func (u *reservationUseCase) GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error) {
+	return u.repo.GetByUserID(ctx, userID)
 }
