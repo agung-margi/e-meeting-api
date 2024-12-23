@@ -154,6 +154,36 @@ paths:
       summary: Logout user
       tags:
       - Authentication
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan User
+      parameters:
+      - description: User Request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Register
+      tags:
+      - Authentication
   /reservations:
     get:
       consumes:
@@ -307,7 +337,20 @@ paths:
     get:
       consumes:
       - application/json
-      description: Mendapatkan semua room
+      description: Get rooms with filters (name, roomType, capacity)
+      parameters:
+      - description: Room name filter
+        in: query
+        name: name
+        type: string
+      - description: Room type filter (1=Small, 2=Medium, 3=Large)
+        in: query
+        name: roomType
+        type: integer
+      - description: Capacity filter (1=<10, 2=11-50, 3=51-100)
+        in: query
+        name: capacity
+        type: integer
       produces:
       - application/json
       responses:
@@ -484,36 +527,6 @@ paths:
       summary: Get Snacks
       tags:
       - Snack
-  /users:
-    post:
-      consumes:
-      - application/json
-      description: Menyimpan User
-      parameters:
-      - description: User Request
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/model.UserRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-      summary: Register user
-      tags:
-      - User
   /users/{id}:
     get:
       consumes:

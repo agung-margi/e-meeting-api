@@ -15,6 +15,8 @@ import (
 )
 
 func RoutingRestAPI(e *echo.Echo) error {
+
+	// Inisialisasi database
 	err := godotenv.Load(".env")
 	if err != nil {
 		e.Logger.Error(err)
@@ -42,7 +44,7 @@ func RoutingRestAPI(e *echo.Echo) error {
 	e.POST("/logout", userHandler.Logout)
 
 	// Routing API User
-	e.POST("/users", userHandler.SaveUser)
+	e.POST("/register", userHandler.SaveUser)
 	e.GET("/users/:id", userHandler.GetUser, middleware.AuthMiddleware)
 	e.PUT("/users/:id", userHandler.UpdateUser, middleware.AuthMiddleware)
 

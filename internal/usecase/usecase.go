@@ -36,7 +36,7 @@ type RoomtypeUseCase interface {
 }
 
 type RoomUseCase interface {
-	GetAll(ctx context.Context) ([]entity.Room, error)
+	GetAll(ctx context.Context, name string, roomType int, capacity int) ([]entity.Room, error)
 	GetByID(ctx context.Context, id int) (*entity.RoomWithType, error)
 	SaveRoom(ctx context.Context, room *model.RoomRequest) error
 	UpdateRoom(ctx context.Context, id int, room *model.RoomRequest) error

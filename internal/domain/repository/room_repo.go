@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
 	"errors"
+	"fmt"
 )
 
 type roomRepo struct {
@@ -15,14 +16,55 @@ func NewRoomRepository(db *sql.DB) RoomRepository {
 	return &roomRepo{DB: db}
 }
 
-func (r *roomRepo) GetAll(ctx context.Context) ([]entity.Room, error) {
-	query := "SELECT id, name, room_type_id, price, capacity, img_url, created_at, updated_at FROM rooms"
-	rows, err := r.DB.QueryContext(ctx, query)
+func (r *roomRepo) GetAll(ctx context.Context, name string, roomType int, capacity int) ([]entity.Room, error) {
+	query := "SELECT id, name, room_type_id, price, capacity, img_url, created_at, updated_at FROM rooms WHERE 1=1"
+
+	var args []interface{}
+	argIndex := 1 // Counter untuk PostgreSQL placeholder ($1, $2, dll.)
+
+	// Filter berdasarkan name
+	if name != "" {
+		query += fmt.Sprintf(" AND name ILIKE $%d", argIndex)
+		args = append(args, "%"+name+"%")
+		argIndex++
+	}
+
+	// Filter berdasarkan roomType
+	if roomType > 0 {
+		query += fmt.Sprintf(" AND room_type_id = $%d", argIndex)
+		args = append(args, roomType)
+		argIndex++
+	}
+
+	// Filter berdasarkan capacity
+	if capacity > 0 {
+		switch capacity {
+		case 1:
+			query += fmt.Sprintf(" AND capacity < $%d", argIndex)
+			args = append(args, 10)
+			argIndex++
+		case 2:
+			query += fmt.Sprintf(" AND capacity BETWEEN $%d AND $%d", argIndex, argIndex+1)
+			args = append(args, 11, 50)
+			argIndex += 2
+		case 3:
+			query += fmt.Sprintf(" AND capacity BETWEEN $%d AND $%d", argIndex, argIndex+1)
+			args = append(args, 51, 100)
+			argIndex += 2
+		}
+	}
+
+	// Log query untuk debugging
+	fmt.Printf("Executing query: %s, with args: %v\n", query, args)
+
+	// Eksekusi query
+	rows, err := r.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
+	// Parsing hasil query
 	var rooms []entity.Room
 	for rows.Next() {
 		room := entity.Room{}

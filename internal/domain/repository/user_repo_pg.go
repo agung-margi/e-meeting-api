@@ -54,7 +54,7 @@ func (r *userRepo) SaveUser(ctx context.Context, user *entity.User) error {
 		user.Password,
 		user.IsAdmin,
 		user.ImgUrl,
-		user.IsActive,
+		true,
 	).Scan(&user.ID)
 	return err
 }

@@ -4,6 +4,7 @@ import (
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -25,23 +26,62 @@ func NewRoomHandler(roomUseCase usecase.RoomUseCase) RoomHandler {
 // @In header
 // @Name Authorization
 
-// GetRooms
+// GetRooms meng-handle request untuk mendapatkan daftar rooms
 // @Summary Get all rooms
-// @Description Mendapatkan semua room
+// @Description Get rooms with filters (name, roomType, capacity)
 // @Tags Room
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Param name query string false "Room name filter"
+// @Param roomType query int false "Room type filter (1=Small, 2=Medium, 3=Large)"
+// @Param capacity query int false "Capacity filter (1=<10, 2=11-50, 3=51-100)"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 500 {object} response.APIResponse
 // @Router /rooms [get]
 func (h *roomHandler) GetRooms(c echo.Context) error {
-	rooms, err := h.roomUseCase.GetAll(c.Request().Context())
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	// Ambil parameter query dari request
+	name := c.QueryParam("name")
+	roomType := c.QueryParam("roomType")
+	capacity := c.QueryParam("capacity")
+
+	// Default nilai untuk roomType
+	roomTypeInt := 0
+
+	// Jika roomType ada, coba konversi ke integer
+	if roomType != "" {
+		var err error
+		roomTypeInt, err = strconv.Atoi(roomType)
+		if err != nil || roomTypeInt < 1 || roomTypeInt > 3 {
+			return c.JSON(http.StatusBadRequest, "Invalid roomType")
+		}
 	}
-	return c.JSON(http.StatusOK, response.SuccessResponse("success get rooms", rooms))
+
+	// Default nilai untuk capacity
+	capacityInt := 0
+
+	// Jika capacity ada, coba konversi ke integer
+	if capacity != "" {
+		var err error
+		capacityInt, err = strconv.Atoi(capacity)
+		if err != nil || capacityInt < 1 || capacityInt > 3 {
+			// Jika ada error saat konversi atau nilai tidak valid (1-3), kembalikan error
+			return c.JSON(http.StatusBadRequest, "Invalid capacity")
+		}
+	}
+
+	fmt.Printf("Handler Params - Name: %s, RoomType: %s, Capacity: %s\n", name, roomType, capacity)
+
+	// Panggil use case untuk mendapatkan rooms berdasarkan filter
+	rooms, err := h.roomUseCase.GetAll(c.Request().Context(), name, roomTypeInt, capacityInt)
+	fmt.Printf("rooms: %v\n", rooms)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "Error fetching rooms")
+	}
+
+	// Return response dengan data rooms
+	return c.JSON(http.StatusOK, rooms)
 }
 
 // SaveRoom

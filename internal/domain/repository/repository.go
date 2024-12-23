@@ -28,7 +28,7 @@ type RoomtypeRepository interface {
 }
 
 type RoomRepository interface {
-	GetAll(ctx context.Context) ([]entity.Room, error)
+	GetAll(ctx context.Context, name string, roomType int, capacity int) ([]entity.Room, error)
 	GetByID(ctx context.Context, id int) (*entity.RoomWithType, error)
 	SaveRoom(ctx context.Context, room *entity.Room) error
 	UpdateRoom(ctx context.Context, id int, room *entity.Room) error
