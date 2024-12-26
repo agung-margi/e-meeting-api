@@ -16,7 +16,7 @@ func NewSnackRepository(db *sql.DB) SnackRepository {
 }
 
 func (r *snackRepo) GetByID(ctx context.Context, id int) (*entity.Snack, error) {
-	query := "SELECT id, name, price, created_at, updated_at FROM snacks WHERE id = $1"
+	query := "SELECT id, name, category, price, created_at, updated_at FROM snacks WHERE id = $1"
 	row := r.DB.QueryRowContext(ctx, query, id)
 	snack := &entity.Snack{}
 
@@ -24,6 +24,7 @@ func (r *snackRepo) GetByID(ctx context.Context, id int) (*entity.Snack, error) 
 		&snack.ID,
 		&snack.Name,
 		&snack.Price,
+		&snack.Category,
 		&snack.CreatedAt,
 		&snack.UpdatedAt,
 	)
@@ -38,7 +39,7 @@ func (r *snackRepo) GetByID(ctx context.Context, id int) (*entity.Snack, error) 
 }
 
 func (r *snackRepo) GetAll(ctx context.Context) ([]entity.Snack, error) {
-	query := "SELECT id, name, price, created_at, updated_at FROM snacks"
+	query := "SELECT id, name, category, price, created_at, updated_at FROM snacks"
 	rows, err := r.DB.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -51,6 +52,7 @@ func (r *snackRepo) GetAll(ctx context.Context) ([]entity.Snack, error) {
 		if err := rows.Scan(
 			&snack.ID,
 			&snack.Name,
+			&snack.Category,
 			&snack.Price,
 			&snack.CreatedAt,
 			&snack.UpdatedAt,

@@ -189,6 +189,23 @@ paths:
       consumes:
       - application/json
       description: Mendapatkan semua reservation
+      parameters:
+      - description: Start date
+        in: query
+        name: start_date
+        type: string
+      - description: End date
+        in: query
+        name: end_date
+        type: string
+      - description: Room type
+        in: query
+        name: room_type
+        type: string
+      - description: Status
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
@@ -333,6 +350,42 @@ paths:
       summary: Pay reservation
       tags:
       - Reservation
+  /room-schedule:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan jadwal room
+      parameters:
+      - description: Room ID
+        in: query
+        name: room_id
+        required: true
+        type: integer
+      - description: Date
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get room schedule
+      tags:
+      - Reservation
   /rooms:
     get:
       consumes:
@@ -403,6 +456,40 @@ paths:
       tags:
       - Room
   /rooms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus room berdasarkan id
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete room by id
+      tags:
+      - Room
     get:
       consumes:
       - application/json

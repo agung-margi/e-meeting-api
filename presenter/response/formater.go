@@ -8,6 +8,13 @@ type APIResponse struct {
 	Data    interface{} `json:"data"`
 }
 
+type APIResponseWithCount struct {
+	Status  int         `json:"status"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+	Count   int         `json:"count"`
+}
+
 func SuccessResponse(message string, data interface{}) *APIResponse {
 	return &APIResponse{
 		Status:  http.StatusOK,
@@ -61,5 +68,14 @@ func InternalServerErrorResponse(message string) *APIResponse {
 		Status:  http.StatusInternalServerError,
 		Message: message,
 		Data:    nil,
+	}
+}
+
+func SuccessResponseWithCount(message string, data interface{}, count int) *APIResponseWithCount {
+	return &APIResponseWithCount{
+		Status:  http.StatusOK,
+		Message: message,
+		Data:    data,
+		Count:   count,
 	}
 }

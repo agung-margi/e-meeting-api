@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/presenter/response"
 	"net/http"
@@ -39,18 +38,6 @@ func (h *roomtypeHandler) GetRoomTypes(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response.SuccessResponse("success get room types", roomTypes))
-}
-
-func (h *roomtypeHandler) SaveRoomType(c echo.Context) error {
-	roomType := new(entity.RoomtypeRepository)
-	if err := c.Bind(roomType); err != nil {
-		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request body"))
-	}
-	err := h.roomtypeUseCase.SaveRoomType(c.Request().Context(), roomType)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to save room type"))
-	}
-	return c.JSON(http.StatusOK, response.SuccessResponse("room type saved successfully", roomType))
 }
 
 func (h *roomtypeHandler) GetRoomType(c echo.Context) error {

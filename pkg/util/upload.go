@@ -55,5 +55,5 @@ func SaveBase64Image(base64Image string, uploadDir string) (string, error) {
 	}
 
 	// Return the public URL
-	return fmt.Sprintf("%s/uploads/rooms/%s", domain, filename), nil
+	return fmt.Sprintf(domain, filename), nil
 }

@@ -7,7 +7,6 @@ import (
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"fmt"
-	"log"
 )
 
 type roomUseCase struct {
@@ -19,7 +18,6 @@ func NewRoomUseCase(repo repository.RoomRepository) RoomUseCase {
 }
 
 func (u *roomUseCase) GetAll(ctx context.Context, name string, roomType int, capacity int) ([]entity.Room, error) {
-	fmt.Printf("Use Case Params - Name: %s, RoomType: %d, Capacity: %d\n", name, roomType, capacity)
 	rooms, err := u.repo.GetAll(ctx, name, roomType, capacity)
 	if err != nil {
 		return nil, err
@@ -35,7 +33,6 @@ func (u *roomUseCase) SaveRoom(ctx context.Context, roomRequest *model.RoomReque
 
 	imageUrl, err := util.SaveBase64Image(roomRequest.Image, "./uploads/rooms")
 	if err != nil {
-		log.Printf("Error saving image: %v", err)
 		return err
 	}
 	fmt.Printf("Image URL: %s\n", imageUrl)
@@ -50,7 +47,6 @@ func (u *roomUseCase) SaveRoom(ctx context.Context, roomRequest *model.RoomReque
 
 	err = u.repo.SaveRoom(ctx, room)
 	if err != nil {
-		log.Printf("Error saving room: %v", err)
 		return err
 	}
 	return nil
@@ -71,8 +67,11 @@ func (u *roomUseCase) UpdateRoom(ctx context.Context, id int, roomRequest *model
 
 	err = u.repo.UpdateRoom(ctx, id, room)
 	if err != nil {
-		log.Printf("Error updating room: %v", err)
 		return err
 	}
 	return nil
+}
+
+func (u *roomUseCase) DeleteRoom(ctx context.Context, id int) error {
+	return u.repo.DeleteRoom(ctx, id)
 }

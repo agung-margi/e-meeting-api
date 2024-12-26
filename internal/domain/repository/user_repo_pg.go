@@ -17,7 +17,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *userRepo) GetByID(ctx context.Context, id int) (*entity.User, error) {
-	query := "SELECT id, username, email, password, is_admin, img_url, is_active, created_at, updated_at FROM users WHERE id = $1"
+	query := "SELECT id, username, email, password, is_admin, img_url, is_active, language, created_at, updated_at FROM users WHERE id = $1"
 	row := r.DB.QueryRowContext(ctx, query, id)
 	user := &entity.User{}
 
@@ -29,6 +29,7 @@ func (r *userRepo) GetByID(ctx context.Context, id int) (*entity.User, error) {
 		&user.IsAdmin,
 		&user.ImgUrl,
 		&user.IsActive,
+		&user.Language,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -44,8 +45,8 @@ func (r *userRepo) GetByID(ctx context.Context, id int) (*entity.User, error) {
 
 func (r *userRepo) SaveUser(ctx context.Context, user *entity.User) error {
 	query := `
-		INSERT INTO users (username, email, password, is_admin, img_url, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO users (username, email, password, is_admin, img_url, is_active, language)
+		VALUES ($1, $2, $3, $4, $5, $6, 'english')
 		RETURNING id
 	`
 	err := r.DB.QueryRowContext(ctx, query,
@@ -62,22 +63,17 @@ func (r *userRepo) SaveUser(ctx context.Context, user *entity.User) error {
 func (r *userRepo) UpdateUser(ctx context.Context, id int, user *entity.User) error {
 	query := `
 			UPDATE users
-			SET password = $1, img_url = $2, is_active = $3, updated_at = $4
-			WHERE id = $5
+			SET password = $1, img_url = $2, is_active = $3, language = $4 updated_at = $5
+			WHERE id = $6
 	`
 	_, err := r.DB.ExecContext(ctx, query,
 		user.Password,
 		user.ImgUrl,
 		user.IsActive,
-		time.Now(), // Use current timestamp for updated_at
+		user.Language,
+		time.Now(),
 		id,
 	)
-	return err
-}
-
-func (r *userRepo) DeleteUser(ctx context.Context, id string) error {
-	query := "DELETE FROM users WHERE id = $1"
-	_, err := r.DB.ExecContext(ctx, query, id)
 	return err
 }
 

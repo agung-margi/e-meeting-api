@@ -6,6 +6,7 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
 	"errors"
+	"time"
 )
 
 type reservationRepo struct {
@@ -61,47 +62,29 @@ func (r *reservationRepo) CheckAvailability(ctx context.Context, roomId int, sta
 	}
 	return true, err
 }
-func (r *reservationRepo) GetReservationsByRoomAndDate(ctx context.Context, roomID int, date string) ([]*entity.Reservation, error) {
+func (r *reservationRepo) GetReservationsByRoomAndDate(ctx context.Context, roomID int, date string) ([]entity.RoomSchedule, error) {
 	query := `
-			SELECT id, user_id, room_id, start_time, end_time, booking_date, room_price, snack_price, total_price, status, created_at, updated_at
-			FROM reservations
-			WHERE room_id = $1
-				AND DATE(start_time) = $2
-			ORDER BY start_time ASC
+			SELECT id, room_id, start_time, end_time 
+			FROM reservations 
+			WHERE room_id = $1 
+				AND DATE(start_time) = $2 
+				AND (status = 'booked' OR status = 'paid')
 	`
+
 	rows, err := r.DB.QueryContext(ctx, query, roomID, date)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var reservations []*entity.Reservation
+	reservations := make([]entity.RoomSchedule, 0)
 	for rows.Next() {
-		var reservation entity.Reservation
-		err := rows.Scan(
-			&reservation.ID,
-			&reservation.UserID,
-			&reservation.RoomID,
-			&reservation.StartTime,
-			&reservation.EndTime,
-			&reservation.BookingDate,
-			&reservation.RoomPrice,
-			&reservation.SnackPrice,
-			&reservation.TotalPrice,
-			&reservation.Status,
-			&reservation.CreatedAt,
-			&reservation.UpdatedAt,
-		)
-		if err != nil {
+		reservation := &entity.RoomSchedule{}
+		if err := rows.Scan(&reservation.ID, &reservation.RoomID, &reservation.StartTime, &reservation.EndTime); err != nil {
 			return nil, err
 		}
-		reservations = append(reservations, &reservation)
+		reservations = append(reservations, *reservation)
 	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
 	return reservations, nil
 }
 
@@ -219,43 +202,6 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 	return details, nil
 }
 
-func (r *reservationRepo) GetAll(ctx context.Context) ([]*entity.Reservation, error) {
-	query := "SELECT * FROM reservations"
-	rows, err := r.DB.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var reservations []*entity.Reservation
-	for rows.Next() {
-		var reservation entity.Reservation
-		if err := rows.Scan(
-			&reservation.ID,
-			&reservation.UserID,
-			&reservation.RoomID,
-			&reservation.StartTime,
-			&reservation.EndTime,
-			&reservation.BookingDate,
-			&reservation.RoomPrice,
-			&reservation.SnackPrice,
-			&reservation.TotalPrice,
-			&reservation.Status,
-			&reservation.CreatedAt,
-			&reservation.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		reservations = append(reservations, &reservation)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return reservations, nil
-}
-
 func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error) {
 	query := "SELECT * FROM reservations WHERE user_id = $1"
 	rows, err := r.DB.QueryContext(ctx, query, userID)
@@ -296,5 +242,80 @@ func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entit
 func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationID int, status string) error {
 	query := "UPDATE reservations SET status = $1 WHERE id = $2"
 	_, err := r.DB.ExecContext(ctx, query, status, reservationID)
+	return err
+}
+
+func (r *reservationRepo) GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error) {
+	query := `
+		SELECT
+    r.id,
+    r.user_id,
+    r.room_id,
+    r.start_time,
+    r.end_time,
+    r.booking_date,
+    r.room_price,
+    r.snack_price,
+    r.total_price,
+    r.status,
+    rt.name AS room_type,
+    r.created_at,
+    r.updated_at
+FROM
+    reservations r
+JOIN
+    rooms rm
+ON
+    r.room_id = rm.id
+JOIN
+    room_types rt
+ON
+    rm.room_type_id = rt.id
+WHERE
+    ($1::timestamp IS NULL OR r.start_time >= $1::timestamp)
+    AND ($2::timestamp IS NULL OR r.end_time <= $2::timestamp)
+    AND ($3::int = 0 OR rm.room_type_id = $3::int)
+    AND ($4::text = '' OR r.status = $4::text)
+		AND ($5::int IS NULL OR r.user_id = $5::int)
+		`
+	// Handle parameter nil
+	var params []interface{}
+	params = append(params, startDate, endDate, roomType, status, userID)
+	rows, err := r.DB.QueryContext(ctx, query, params...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Parsing hasil query ke dalam slice of Reservation
+	var reservations []*entity.Reservation
+	for rows.Next() {
+		var reservation entity.Reservation
+		if err := rows.Scan(
+			&reservation.ID,
+			&reservation.UserID,
+			&reservation.RoomID,
+			&reservation.StartTime,
+			&reservation.EndTime,
+			&reservation.BookingDate,
+			&reservation.RoomPrice,
+			&reservation.SnackPrice,
+			&reservation.TotalPrice,
+			&reservation.Status,
+			&reservation.RoomType,
+			&reservation.CreatedAt,
+			&reservation.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		reservations = append(reservations, &reservation)
+	}
+
+	return reservations, nil
+}
+
+func (r *reservationRepo) GetRoomSchedule(ctx context.Context, roomID int, date string) error {
+	query := " "
+	_, err := r.DB.ExecContext(ctx, query, roomID, date)
 	return err
 }

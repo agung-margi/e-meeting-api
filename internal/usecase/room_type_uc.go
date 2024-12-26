@@ -25,7 +25,3 @@ func (u *roomtypeUseCase) GetByID(ctx context.Context, id int) (*entity.Roomtype
 func (u *roomtypeUseCase) GetByName(ctx context.Context, name string) (*entity.RoomtypeRepository, error) {
 	return u.repo.GetByName(ctx, name)
 }
-
-func (u *roomtypeUseCase) SaveRoomType(ctx context.Context, roomType *entity.RoomtypeRepository) error {
-	return u.repo.SaveRoomType(ctx, roomType)
-}

@@ -10,6 +10,7 @@ type User struct {
 	IsAdmin   bool      `json:"isAdmin"`
 	ImgUrl    string    `json:"imgUrl"`
 	IsActive  bool      `json:"isActive"`
+	Language  string    `json:"language"`
 	CreatedAt string    `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

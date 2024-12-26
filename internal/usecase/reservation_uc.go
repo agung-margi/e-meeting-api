@@ -6,7 +6,6 @@ import (
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/presenter/model"
 	"errors"
-	"log"
 	"time"
 )
 
@@ -31,16 +30,8 @@ func (u *reservationUseCase) CheckAvailability(ctx context.Context, roomId int, 
 	return !avalilable, nil
 }
 
-func (u *reservationUseCase) GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]*entity.Reservation, error) {
+func (u *reservationUseCase) GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]entity.RoomSchedule, error) {
 	return u.repo.GetReservationsByRoomAndDate(ctx, roomId, date)
-}
-
-func (u *reservationUseCase) GetAll(ctx context.Context) ([]*entity.Reservation, error) {
-	return u.repo.GetAll(ctx)
-}
-
-func (u *reservationUseCase) GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error) {
-	return u.repo.GetByUserID(ctx, userID)
 }
 func (u *reservationUseCase) PayReservation(ctx context.Context, id int, userId int, isAdmin bool) error {
 
@@ -119,7 +110,6 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 
 	avalilable, err := u.CheckAvailability(ctx, reservationRequest.RoomID, reservationRequest.StartTime, reservationRequest.EndTime)
 	if err != nil {
-		log.Printf("Error checking availability: %v", err)
 		return nil, err
 	}
 
@@ -129,7 +119,6 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 
 	roomPricePerHour, err := u.repo.GetRoomPriceByID(ctx, reservationRequest.RoomID)
 	if err != nil {
-		log.Printf("Error retrieving room price: %v", err)
 		return nil, err
 	}
 
@@ -144,7 +133,6 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 	if reservationRequest.SnackID != nil {
 		snackPrice, err = u.repo.GetSnackPriceByID(ctx, *reservationRequest.SnackID)
 		if err != nil {
-			log.Printf("Error retrieving snack price: %v", err)
 			return nil, err
 		}
 	}
@@ -176,13 +164,11 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 		Notes:        reservationRequest.Notes,
 	})
 	if err != nil {
-		log.Printf("Error saving reservation: %v", err)
 		return nil, err
 	}
 
 	details, err := u.repo.GetReservationDetails(ctx, reservation.ID)
 	if err != nil {
-		log.Printf("Error retrieving reservation details: %v", err)
 		return nil, err
 	}
 
@@ -201,4 +187,13 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 	}
 
 	return response, nil
+}
+
+func (u *reservationUseCase) GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error) {
+	reservations, err := u.repo.GetAll(ctx, startDate, endDate, roomType, status, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return reservations, nil
 }

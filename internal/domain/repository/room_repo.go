@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
 	"errors"
-	"fmt"
+	"strconv"
 )
 
 type roomRepo struct {
@@ -20,18 +20,18 @@ func (r *roomRepo) GetAll(ctx context.Context, name string, roomType int, capaci
 	query := "SELECT id, name, room_type_id, price, capacity, img_url, created_at, updated_at FROM rooms WHERE 1=1"
 
 	var args []interface{}
-	argIndex := 1 // Counter untuk PostgreSQL placeholder ($1, $2, dll.)
+	argIndex := 1
 
 	// Filter berdasarkan name
 	if name != "" {
-		query += fmt.Sprintf(" AND name ILIKE $%d", argIndex)
+		query += " AND name ILIKE $" + strconv.Itoa(argIndex)
 		args = append(args, "%"+name+"%")
 		argIndex++
 	}
 
 	// Filter berdasarkan roomType
 	if roomType > 0 {
-		query += fmt.Sprintf(" AND room_type_id = $%d", argIndex)
+		query += " AND room_type_id = $" + strconv.Itoa(argIndex)
 		args = append(args, roomType)
 		argIndex++
 	}
@@ -40,22 +40,19 @@ func (r *roomRepo) GetAll(ctx context.Context, name string, roomType int, capaci
 	if capacity > 0 {
 		switch capacity {
 		case 1:
-			query += fmt.Sprintf(" AND capacity < $%d", argIndex)
+			query += " AND capacity < $" + strconv.Itoa(argIndex)
 			args = append(args, 10)
 			argIndex++
 		case 2:
-			query += fmt.Sprintf(" AND capacity BETWEEN $%d AND $%d", argIndex, argIndex+1)
+			query += " AND capacity BETWEEN $" + strconv.Itoa(argIndex) + " AND $" + strconv.Itoa(argIndex+1)
 			args = append(args, 11, 50)
 			argIndex += 2
 		case 3:
-			query += fmt.Sprintf(" AND capacity BETWEEN $%d AND $%d", argIndex, argIndex+1)
+			query += " AND capacity BETWEEN $" + strconv.Itoa(argIndex) + " AND $" + strconv.Itoa(argIndex+1)
 			args = append(args, 51, 100)
 			argIndex += 2
 		}
 	}
-
-	// Log query untuk debugging
-	fmt.Printf("Executing query: %s, with args: %v\n", query, args)
 
 	// Eksekusi query
 	rows, err := r.DB.QueryContext(ctx, query, args...)
@@ -146,4 +143,31 @@ func (r *roomRepo) UpdateRoom(ctx context.Context, id int, room *entity.Room) er
 		return err
 	}
 	return nil
+}
+
+func (r *roomRepo) DeleteRoom(ctx context.Context, id int) error {
+	query := "DELETE FROM rooms WHERE id = $1"
+	_, err := r.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *reservationRepo) GetReservationsCountByRoomAndDate(ctx context.Context, roomID int, date string) (int, error) {
+	query := `
+			SELECT COUNT(id)
+			FROM reservations 
+			WHERE room_id = $1 
+				AND DATE(start_time) = $2 
+				AND (status = 'booked' OR status = 'paid')
+	`
+
+	var count int
+	err := r.DB.QueryRowContext(ctx, query, roomID, date).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

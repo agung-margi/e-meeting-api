@@ -18,10 +18,7 @@ type ReservationHandler interface {
 	SaveReservation(c echo.Context) error
 	CancelReservation(c echo.Context) error
 	PayReservation(c echo.Context) error
-	// // Update(c echo.Context) error
-	// // Delete(c echo.Context) error
-	// CheckAvailability(c echo.Context) error
-	// CheckRoomSchedule(c echo.Context) error
+	GetRoomSchedule(c echo.Context) error
 }
 
 type SnackHandler interface {
@@ -30,7 +27,6 @@ type SnackHandler interface {
 
 type RoomtypeHandler interface {
 	GetRoomTypes(c echo.Context) error
-	SaveRoomType(c echo.Context) error
 	GetRoomType(c echo.Context) error
 }
 
@@ -39,4 +35,5 @@ type RoomHandler interface {
 	SaveRoom(c echo.Context) error
 	GetRoom(c echo.Context) error
 	UpdateRoom(c echo.Context) error
+	DeleteRoom(c echo.Context) error
 }

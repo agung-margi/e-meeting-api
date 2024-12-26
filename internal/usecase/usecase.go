@@ -4,6 +4,7 @@ import (
 	"context"
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
+	"time"
 )
 
 type UserUseCase interface {
@@ -17,9 +18,8 @@ type ReservationUseCase interface {
 	GetReservation(ctx context.Context, id int) (*entity.Reservation, error)
 	SaveReservation(ctx context.Context, reservationRequest *model.ReservationRequest, userId int) (*model.ReservationResponse, error)
 	CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error)
-	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]*entity.Reservation, error)
-	GetAll(ctx context.Context) ([]*entity.Reservation, error)
-	GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error)
+	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]entity.RoomSchedule, error)
+	GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error)
 	PayReservation(ctx context.Context, id int, userId int, isAdmin bool) error
 	CancelReservation(ctx context.Context, id int, userId int, isAdmin bool) error
 }
@@ -32,7 +32,6 @@ type RoomtypeUseCase interface {
 	GetAll(ctx context.Context) ([]entity.RoomtypeRepository, error)
 	GetByID(ctx context.Context, id int) (*entity.RoomtypeRepository, error)
 	GetByName(ctx context.Context, name string) (*entity.RoomtypeRepository, error)
-	SaveRoomType(ctx context.Context, roomType *entity.RoomtypeRepository) error
 }
 
 type RoomUseCase interface {
@@ -40,4 +39,5 @@ type RoomUseCase interface {
 	GetByID(ctx context.Context, id int) (*entity.RoomWithType, error)
 	SaveRoom(ctx context.Context, room *model.RoomRequest) error
 	UpdateRoom(ctx context.Context, id int, room *model.RoomRequest) error
+	DeleteRoom(ctx context.Context, id int) error
 }

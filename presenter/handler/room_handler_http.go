@@ -4,7 +4,6 @@ import (
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -71,13 +70,10 @@ func (h *roomHandler) GetRooms(c echo.Context) error {
 		}
 	}
 
-	fmt.Printf("Handler Params - Name: %s, RoomType: %s, Capacity: %s\n", name, roomType, capacity)
-
 	// Panggil use case untuk mendapatkan rooms berdasarkan filter
 	rooms, err := h.roomUseCase.GetAll(c.Request().Context(), name, roomTypeInt, capacityInt)
-	fmt.Printf("rooms: %v\n", rooms)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "Error fetching rooms")
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	// Return response dengan data rooms
@@ -103,7 +99,7 @@ func (h *roomHandler) SaveRoom(c echo.Context) error {
 	}
 	err := h.roomUseCase.SaveRoom(c.Request().Context(), room)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to save room"))
+		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse(err.Error()))
 	}
 	return c.JSON(http.StatusOK, response.SuccessResponse("room saved successfully", room))
 }
@@ -170,4 +166,29 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response.SuccessResponse("room updated successfully", updatedRoom))
+}
+
+// DeleteRoom
+// @Summary Delete room by id
+// @Description Menghapus room berdasarkan id
+// @Tags Room
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path int true "Room ID"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 404 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /rooms/{id} [delete]
+func (h *roomHandler) DeleteRoom(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid room id"))
+	}
+	err = h.roomUseCase.DeleteRoom(c.Request().Context(), id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to delete room"))
+	}
+	return c.JSON(http.StatusOK, response.SuccessResponse("room deleted successfully", nil))
 }

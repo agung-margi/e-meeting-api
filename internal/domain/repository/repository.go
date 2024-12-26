@@ -4,6 +4,7 @@ import (
 	"context"
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
+	"time"
 )
 
 type UserRepository interface {
@@ -11,7 +12,6 @@ type UserRepository interface {
 	GetByUsername(ctx context.Context, username string) (*entity.User, error)
 	SaveUser(ctx context.Context, user *entity.User) error
 	UpdateUser(ctx context.Context, id int, user *entity.User) error
-	DeleteUser(ctx context.Context, id string) error
 	CheckEmailExists(ctx context.Context, email string) (bool, error)
 }
 
@@ -32,17 +32,18 @@ type RoomRepository interface {
 	GetByID(ctx context.Context, id int) (*entity.RoomWithType, error)
 	SaveRoom(ctx context.Context, room *entity.Room) error
 	UpdateRoom(ctx context.Context, id int, room *entity.Room) error
+	DeleteRoom(ctx context.Context, id int) error
 }
 
 type ReservationRepository interface {
 	GetByID(ctx context.Context, id int) (*entity.Reservation, error)
 	SaveReservation(ctx context.Context, reservation *entity.Reservation, details *entity.ReservationDetails) error
 	CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error)
-	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]*entity.Reservation, error)
+	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]entity.RoomSchedule, error)
 	GetRoomPriceByID(ctx context.Context, roomID int) (int, error)
 	GetSnackPriceByID(ctx context.Context, snackID int) (int, error)
 	GetReservationDetails(ctx context.Context, reservationID int) ([]model.ReservationDetailsResponse, error)
-	GetAll(ctx context.Context) ([]*entity.Reservation, error)
-	GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error)
+	GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error)
 	UpdateStatus(ctx context.Context, id int, status string) error
+	GetReservationsCountByRoomAndDate(ctx context.Context, roomID int, date string) (int, error)
 }

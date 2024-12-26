@@ -85,6 +85,8 @@ func (u *userUseCase) Login(ctx context.Context, username string, password strin
 	claims := jwt.MapClaims{
 		"user_id":  user.ID,
 		"is_admin": user.IsAdmin,
+		"language": user.Language,
+		"exp":      time.Now().Add(12 * time.Hour).Unix(),
 	}
 
 	token, err := util.GenerateToken(secret, 24*time.Hour, claims)
