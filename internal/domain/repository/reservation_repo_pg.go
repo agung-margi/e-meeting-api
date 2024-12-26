@@ -64,11 +64,12 @@ func (r *reservationRepo) CheckAvailability(ctx context.Context, roomId int, sta
 }
 func (r *reservationRepo) GetReservationsByRoomAndDate(ctx context.Context, roomID int, date string) ([]entity.RoomSchedule, error) {
 	query := `
-			SELECT id, room_id, start_time, end_time 
-			FROM reservations 
-			WHERE room_id = $1 
-				AND DATE(start_time) = $2 
-				AND (status = 'booked' OR status = 'paid')
+			SELECT r.id, r.room_id, rm.name, r.start_time, r.end_time 
+FROM reservations r
+JOIN rooms rm ON r.room_id = rm.id
+WHERE r.room_id = $1
+  AND DATE(r.start_time) = $2
+  AND (r.status = 'booked' OR r.status = 'paid')
 	`
 
 	rows, err := r.DB.QueryContext(ctx, query, roomID, date)
@@ -80,7 +81,7 @@ func (r *reservationRepo) GetReservationsByRoomAndDate(ctx context.Context, room
 	reservations := make([]entity.RoomSchedule, 0)
 	for rows.Next() {
 		reservation := &entity.RoomSchedule{}
-		if err := rows.Scan(&reservation.ID, &reservation.RoomID, &reservation.StartTime, &reservation.EndTime); err != nil {
+		if err := rows.Scan(&reservation.ID, &reservation.RoomID, &reservation.RoomName, &reservation.StartTime, &reservation.EndTime); err != nil {
 			return nil, err
 		}
 		reservations = append(reservations, *reservation)
