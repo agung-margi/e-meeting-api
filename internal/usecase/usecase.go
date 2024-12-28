@@ -15,7 +15,7 @@ type UserUseCase interface {
 }
 
 type ReservationUseCase interface {
-	GetReservation(ctx context.Context, id int) (*entity.Reservation, error)
+	GetReservation(ctx context.Context, id int) ([]model.ReservationDetailsResponse, error)
 	SaveReservation(ctx context.Context, reservationRequest *model.ReservationRequest, userId int) (*model.ReservationResponse, error)
 	CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error)
 	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]entity.RoomSchedule, error)
@@ -26,6 +26,7 @@ type ReservationUseCase interface {
 
 type SnackUseCase interface {
 	GetAll(ctx context.Context) ([]entity.Snack, error)
+	GetByID(ctx context.Context, id int) (*entity.Snack, error)
 }
 
 type RoomtypeUseCase interface {
@@ -40,4 +41,8 @@ type RoomUseCase interface {
 	SaveRoom(ctx context.Context, room *model.RoomRequest) error
 	UpdateRoom(ctx context.Context, id int, room *model.RoomRequest) error
 	DeleteRoom(ctx context.Context, id int) error
+}
+
+type InquiryUsecase interface {
+	Save(ctx context.Context, reservation *entity.Reservation) (*entity.Inquiry, error)
 }

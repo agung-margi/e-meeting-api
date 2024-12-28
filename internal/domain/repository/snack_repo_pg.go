@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
-	"errors"
+	"fmt"
 )
 
 type snackRepo struct {
@@ -16,25 +16,13 @@ func NewSnackRepository(db *sql.DB) SnackRepository {
 }
 
 func (r *snackRepo) GetByID(ctx context.Context, id int) (*entity.Snack, error) {
-	query := "SELECT id, name, category, price, created_at, updated_at FROM snacks WHERE id = $1"
-	row := r.DB.QueryRowContext(ctx, query, id)
+	query := "SELECT id, name, category, price FROM snacks WHERE id = $1"
 	snack := &entity.Snack{}
-
-	err := row.Scan(
-		&snack.ID,
-		&snack.Name,
-		&snack.Price,
-		&snack.Category,
-		&snack.CreatedAt,
-		&snack.UpdatedAt,
-	)
+	err := r.DB.QueryRowContext(ctx, query, id).Scan(&snack.ID, &snack.Name, &snack.Category, &snack.Price)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("snack not found")
-		}
-		return nil, err
+		fmt.Println("Error fetching snack:", err) // Log the error
+		return nil, fmt.Errorf("failed to get snack: %w", err)
 	}
-
 	return snack, nil
 }
 

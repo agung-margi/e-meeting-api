@@ -37,3 +37,7 @@ type RoomHandler interface {
 	UpdateRoom(c echo.Context) error
 	DeleteRoom(c echo.Context) error
 }
+
+type InquiryHandler interface {
+	SaveInquiry(c echo.Context) error
+}

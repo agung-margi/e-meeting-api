@@ -15,28 +15,39 @@ definitions:
     type: object
   model.ReservationRequest:
     properties:
+      bookingDate:
+        example: "2025-02-01"
+        type: string
       company:
+        example: ABC Company
         type: string
       endTime:
+        example: "09:00"
         type: string
       name:
+        example: John Doe
         type: string
       notes:
+        example: Additional notes
         type: string
       participants:
+        example: 10
         type: integer
       phone:
+        example: "1234567890"
         type: string
       roomId:
+        example: 2
         type: integer
       snackId:
+        example: 1
         type: integer
       startTime:
+        example: "08:00"
         type: string
       userId:
+        example: 1
         type: integer
-    required:
-    - userId
     type: object
   model.RoomRequest:
     properties:
@@ -258,7 +269,7 @@ paths:
       tags:
       - Reservation
   /reservations/{id}:
-    get:
+    post:
       consumes:
       - application/json
       description: Mendapatkan reservation berdasarkan id
@@ -348,6 +359,38 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Pay reservation
+      tags:
+      - Reservation
+  /reservations/inquiry:
+    post:
+      consumes:
+      - application/json
+      description: Save Inquiry
+      parameters:
+      - description: Reservation Request
+        in: body
+        name: reservation
+        required: true
+        schema:
+          $ref: '#/definitions/model.ReservationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Save Inquiry
       tags:
       - Reservation
   /room-schedule:

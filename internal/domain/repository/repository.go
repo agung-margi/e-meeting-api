@@ -47,3 +47,7 @@ type ReservationRepository interface {
 	UpdateStatus(ctx context.Context, id int, status string) error
 	GetReservationsCountByRoomAndDate(ctx context.Context, roomID int, date string) (int, error)
 }
+
+type InquiryRepository interface {
+	Save(context.Context, *entity.Inquiry) (*entity.Inquiry, error)
+}

@@ -4,6 +4,7 @@ import (
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -32,7 +33,7 @@ func NewReservationHandler(useCase usecase.ReservationUseCase) ReservationHandle
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 404 {object} response.APIResponse
-// @Router /reservations/{id} [get]
+// @Router /reservations/{id} [post]
 func (h *reservationHandler) GetReservation(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -52,7 +53,9 @@ func (h *reservationHandler) GetReservation(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, response.NotFoundResponse("reservation not found"))
 	}
 
-	if reservation.UserID != userID && !isAdmin {
+	reservationUserID := reservation[0].UserID
+
+	if reservationUserID != userID && !isAdmin {
 		return c.JSON(http.StatusForbidden, response.ErrorResponse("forbidden", http.StatusForbidden))
 	}
 
@@ -76,10 +79,9 @@ func (h *reservationHandler) SaveReservation(c echo.Context) error {
 	userId := c.Get("user_id").(float64)
 
 	var req model.ReservationRequest
-	if err := c.Bind(&req); err != nil {
+	if err := json.NewDecoder(c.Request().Body).Decode(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request body"))
 	}
-
 	req.UserID = int(userId)
 
 	reservation, err := h.useCase.SaveReservation(c.Request().Context(), &req, int(userId))

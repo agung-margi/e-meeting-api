@@ -17,3 +17,7 @@ func NewSnackUseCase(repo repository.SnackRepository) SnackUseCase {
 func (u *snackUseCase) GetAll(ctx context.Context) ([]entity.Snack, error) {
 	return u.repo.GetAll(ctx)
 }
+
+func (u *snackUseCase) GetByID(ctx context.Context, id int) (*entity.Snack, error) {
+	return u.repo.GetByID(ctx, id)
+}

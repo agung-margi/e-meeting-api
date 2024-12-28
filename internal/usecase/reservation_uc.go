@@ -17,8 +17,13 @@ func NewReservationUseCase(repo repository.ReservationRepository) ReservationUse
 	return &reservationUseCase{repo: repo}
 }
 
-func (u *reservationUseCase) GetReservation(ctx context.Context, id int) (*entity.Reservation, error) {
-	return u.repo.GetByID(ctx, id)
+func (u *reservationUseCase) GetReservation(ctx context.Context, id int) ([]model.ReservationDetailsResponse, error) {
+	reservation, err := u.repo.GetReservationDetails(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return reservation, nil
 }
 
 func (u *reservationUseCase) CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error) {
@@ -49,13 +54,13 @@ func (u *reservationUseCase) PayReservation(ctx context.Context, id int, userId 
 		return errors.New("reservation that has already been paid")
 	}
 
-	if time.Now().After(reservation.StartTime) {
-		return errors.New("reservation that has already started")
-	}
+	// if time.Now().After(reservation.StartTime) {
+	// 	return errors.New("reservation that has already started")
+	// }
 
-	if time.Now().After(reservation.EndTime) {
-		return errors.New("reservation that has already ended")
-	}
+	// if time.Now().After(reservation.EndTime) {
+	// 	return errors.New("reservation that has already ended")
+	// }
 
 	if reservation.Status == "cancelled" {
 		return errors.New("reservation that has already been cancelled")
@@ -74,13 +79,13 @@ func (u *reservationUseCase) CancelReservation(ctx context.Context, id int, user
 		return errors.New("reservation that has already been paid")
 	}
 
-	if time.Now().After(reservation.StartTime) {
-		return errors.New("reservation that has already started")
-	}
+	// if time.Now().After(reservation.StartTime) {
+	// 	return errors.New("reservation that has already started")
+	// }
 
-	if time.Now().After(reservation.EndTime) {
-		return errors.New("reservation that has already ended")
-	}
+	// if time.Now().After(reservation.EndTime) {
+	// 	return errors.New("reservation that has already ended")
+	// }
 
 	if reservation.Status == "cancelled" {
 		return errors.New("reservation that has already been cancelled")
@@ -142,17 +147,17 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 	totalPrice := totalRoomPrice + totalSnackPrice
 
 	reservation := &entity.Reservation{
-		UserID:      userId,
-		RoomID:      reservationRequest.RoomID,
-		StartTime:   startTime,
-		EndTime:     endTime,
-		BookingDate: time.Now(),
-		RoomPrice:   totalRoomPrice,
-		SnackPrice:  totalSnackPrice,
-		TotalPrice:  totalPrice,
-		Status:      "booked",
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		UserID: userId,
+		RoomID: reservationRequest.RoomID,
+		// StartTime:   startTime,
+		// EndTime:     endTime,
+		// BookingDate: time.Now(),
+		RoomPrice:  totalRoomPrice,
+		SnackPrice: totalSnackPrice,
+		TotalPrice: totalPrice,
+		Status:     "booked",
+		// CreatedAt:   time.Now(),
+		// UpdatedAt:   time.Now(),
 	}
 
 	err = u.repo.SaveReservation(ctx, reservation, &entity.ReservationDetails{
@@ -176,14 +181,14 @@ func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationReq
 		ReservationID: reservation.ID,
 		UserID:        reservation.UserID,
 		RoomID:        reservation.RoomID,
-		StartTime:     reservation.StartTime,
-		EndTime:       reservation.EndTime,
-		BookingDate:   time.Now(),
-		RoomPrice:     reservation.RoomPrice,
-		SnackPrice:    reservation.SnackPrice,
-		TotalPrice:    reservation.TotalPrice,
-		Status:        reservation.Status,
-		Details:       details,
+		// StartTime:     reservation.StartTime,
+		// EndTime:       reservation.EndTime,
+		BookingDate: time.Now(),
+		RoomPrice:   reservation.RoomPrice,
+		SnackPrice:  reservation.SnackPrice,
+		TotalPrice:  reservation.TotalPrice,
+		Status:      reservation.Status,
+		Details:     details,
 	}
 
 	return response, nil

@@ -6,6 +6,7 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -18,30 +19,17 @@ func NewReservationRepository(db *sql.DB) ReservationRepository {
 }
 
 func (r *reservationRepo) GetByID(ctx context.Context, id int) (*entity.Reservation, error) {
+	reservation := &entity.Reservation{}
 	query := "SELECT * FROM reservations WHERE id = $1"
 	row := r.DB.QueryRowContext(ctx, query, id)
-	roomReservation := &entity.Reservation{}
-	err := row.Scan(
-		&roomReservation.ID,
-		&roomReservation.UserID,
-		&roomReservation.RoomID,
-		&roomReservation.StartTime,
-		&roomReservation.EndTime,
-		&roomReservation.BookingDate,
-		&roomReservation.RoomPrice,
-		&roomReservation.SnackPrice,
-		&roomReservation.TotalPrice,
-		&roomReservation.Status,
-		&roomReservation.CreatedAt,
-		&roomReservation.UpdatedAt,
-	)
+	err := row.Scan(&reservation.ID, &reservation.RoomID, &reservation.StartTime, &reservation.EndTime, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New("reservation not found")
 		}
 		return nil, err
 	}
-	return roomReservation, nil
+	return reservation, nil
 }
 
 func (r *reservationRepo) CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error) {
@@ -148,59 +136,6 @@ func (r *reservationRepo) SaveReservation(ctx context.Context, reservation *enti
 	}
 
 	return nil
-}
-
-func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservationID int) ([]model.ReservationDetailsResponse, error) {
-	query := `
-			SELECT
-					rd.reservation_id,
-					rd.name,
-					rd.phone,
-					rd.company,
-					rd.snack_id,
-					rd.participants,
-					rd.notes
-			FROM
-					reservation_details rd
-			WHERE
-					rd.reservation_id = $1
-	`
-
-	rows, err := r.DB.QueryContext(ctx, query, reservationID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var details []model.ReservationDetailsResponse
-	for rows.Next() {
-		var detail model.ReservationDetailsResponse
-		var snackID sql.NullInt64
-		if err := rows.Scan(
-			&detail.ReservationID,
-			&detail.Name,
-			&detail.Phone,
-			&detail.Company,
-			&snackID,
-			&detail.Participants,
-			&detail.Notes,
-		); err != nil {
-			return nil, err
-		}
-
-		if snackID.Valid {
-			detail.SnackID = int(snackID.Int64)
-		} else {
-			detail.SnackID = 0
-		}
-		details = append(details, detail)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return details, nil
 }
 
 func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error) {
@@ -319,4 +254,130 @@ func (r *reservationRepo) GetRoomSchedule(ctx context.Context, roomID int, date 
 	query := " "
 	_, err := r.DB.ExecContext(ctx, query, roomID, date)
 	return err
+}
+
+func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservationID int) ([]model.ReservationDetailsResponse, error) {
+	query := `
+		SELECT 
+			r.user_id AS user_id,
+			rm.id AS room_id,
+			rm.name AS room_name,
+			rm.capacity AS room_capacity,
+			rm.price AS room_price,
+
+			-- Booking Details
+			rd.name AS customer_name,
+			rd.phone AS customer_phone,
+			rd.company AS company_name,
+			r.booking_date AS date_reservation,
+			r.start_time AS start_date,
+			r.end_time AS end_date,
+			rd.participants AS participants,
+
+			-- Consumption Details
+			COALESCE(s.id, 0) AS snack_id,
+			COALESCE(s.category, '') AS snack_category,
+			COALESCE(s.name, '') AS snack_name,
+			COALESCE(s.price, 0) AS snack_price,
+
+			-- Total and Notes
+			r.total_price AS total_price,
+			r.room_price AS total_room_price,
+			COALESCE(r.snack_price, 0) AS total_snack_price,
+			rd.notes AS reservation_notes
+
+		FROM 
+			reservations r
+		JOIN 
+			rooms rm ON r.room_id = rm.id
+		JOIN 
+			reservation_details rd ON r.id = rd.reservation_id
+		LEFT JOIN 
+			snacks s ON rd.snack_id = s.id
+		WHERE 
+			r.id = $1;
+	`
+
+	row := r.DB.QueryRowContext(ctx, query, reservationID)
+
+	// Create response structure
+	reservation := &model.ReservationDetailsResponse{}
+
+	// Variables to hold query results
+	var (
+		roomID, roomCapacity, roomPrice, participants, snackID, snackPrice, totalPrice, totalRoomPrice, totalSnackPrice int
+		roomName, customerName, customerPhone, companyName, snackCategory, snackName, notes                             string
+		userID                                                                                                          int
+		dateReservation, startDate, endDate                                                                             time.Time
+	)
+
+	// Scan the results from the query
+	err := row.Scan(
+		&userID,
+		&roomID, &roomName, &roomCapacity, &roomPrice,
+		&customerName, &customerPhone, &companyName, &dateReservation, &startDate, &endDate, &participants,
+		&snackID, &snackCategory, &snackName, &snackPrice,
+		&totalPrice, &totalRoomPrice, &totalSnackPrice,
+		&notes,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate duration
+	duration := int(endDate.Sub(startDate).Hours())
+
+	// Populate RoomDetails
+	reservation.RoomDetails = []model.RoomDetailsResponse{
+		{
+			RoomID:    roomID,
+			RoomName:  roomName,
+			Capacity:  roomCapacity,
+			RoomPrice: roomPrice,
+		},
+	}
+
+	// Populate BookDetails
+	reservation.BookDetails = []model.BookingDetailsResponse{
+		{
+			Name:            customerName,
+			Phone:           customerPhone,
+			Company:         companyName,
+			DateReservation: dateReservation,
+			Duration:        duration,
+			Participants:    participants,
+		},
+	}
+
+	// Populate Consumption
+	if snackID != 0 {
+		reservation.Snacks = []model.SnackResponse{
+			{
+				SnackID:  snackID,
+				Category: snackCategory,
+				Name:     snackName,
+				Price:    snackPrice,
+			},
+		}
+	}
+
+	// Populate TotalPrice
+	reservation.TotalPrice = []model.ReservationTotalPriceResponse{
+		{
+			RoomName:        roomName,
+			CountRoomPrice:  fmt.Sprintf("%d x %d", duration, roomPrice),
+			TotalRoomPrice:  totalRoomPrice,
+			SnackName:       snackName,
+			CountSnackPrice: fmt.Sprintf("%d x %d", participants, snackPrice),
+			TotalSnackPrice: totalSnackPrice,
+			TotalPrice:      totalPrice,
+		},
+	}
+
+	// Add Notes
+	reservation.Notes = notes
+	reservation.ReservationID = reservationID
+	reservation.UserID = userID
+
+	return []model.ReservationDetailsResponse{*reservation}, nil
 }

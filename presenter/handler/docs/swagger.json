@@ -234,8 +234,59 @@
                 }
             }
         },
+        "/reservations/inquiry": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Save Inquiry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reservation"
+                ],
+                "summary": "Save Inquiry",
+                "parameters": [
+                    {
+                        "description": "Reservation Request",
+                        "name": "reservation",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ReservationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/reservations/{id}": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -930,39 +981,50 @@
         },
         "model.ReservationRequest": {
             "type": "object",
-            "required": [
-                "userId"
-            ],
             "properties": {
+                "bookingDate": {
+                    "type": "string",
+                    "example": "2025-02-01"
+                },
                 "company": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ABC Company"
                 },
                 "endTime": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "09:00"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "notes": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Additional notes"
                 },
                 "participants": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 10
                 },
                 "phone": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1234567890"
                 },
                 "roomId": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 2
                 },
                 "snackId": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 },
                 "startTime": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "08:00"
                 },
                 "userId": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
