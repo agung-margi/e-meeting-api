@@ -1,59 +1,56 @@
 package util
 
 import (
-	"encoding/base64"
-	"fmt"
+	"errors"
+	"io"
+	"mime/multipart"
+	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
-// SaveBase64Image decodes Base64 image and saves it. Returns the public URL.
-func SaveBase64Image(base64Image string, uploadDir string) (string, error) {
-	dataParts := strings.Split(base64Image, ",")
-	if len(dataParts) != 2 {
-		return "", fmt.Errorf("invalid Base64 format")
-	}
-
-	// Validate image format
-	if !(strings.Contains(dataParts[0], "image/jpeg") || strings.Contains(dataParts[0], "image/png")) {
-		return "", fmt.Errorf("only JPEG and PNG formats are supported")
-	}
-
-	decodedData, err := base64.StdEncoding.DecodeString(dataParts[1])
+func SaveUploadedFile(file *multipart.FileHeader, path string) error {
+	// Open the uploaded file.
+	src, err := file.Open()
 	if err != nil {
-		return "", fmt.Errorf("failed to decode Base64: %v", err)
+		return err
 	}
+	defer src.Close()
 
-	// Determine file extension
-	ext := ".png"
-	if strings.Contains(dataParts[0], "image/jpeg") {
-		ext = ".jpg"
-	}
-
-	// Generate filename
-	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-	fullPath := filepath.Join(uploadDir, filename)
-
-	// Create directory if it doesn't exist
-	err = os.MkdirAll(uploadDir, os.ModePerm)
+	// Create a destination file for the uploaded content.
+	dst, err := os.Create(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to create directory: %v", err)
+		return err
+	}
+	defer dst.Close()
+
+	// Copy the uploaded content to the destination file.
+	if _, err = io.Copy(dst, src); err != nil {
+		return err
 	}
 
-	// Save file to disk
-	err = os.WriteFile(fullPath, decodedData, 0644)
+	return nil
+}
+
+func ValidateImageFile(file multipart.File) (bool, error) {
+	buffer := make([]byte, 512)
+	_, err := file.Read(buffer)
 	if err != nil {
-		return "", fmt.Errorf("failed to save image: %v", err)
+		return false, errors.New("failed to read file")
 	}
 
-	//GetDomain
-	domain := os.Getenv("DOMAIN")
-	if domain == "" {
-		return "", fmt.Errorf("environment variable DOMAIN is not set")
+	// Deteksi tipe MIME
+	fileType := http.DetectContentType(buffer)
+
+	// Daftar tipe file yang diizinkan
+	allowedTypes := []string{"image/jpeg", "image/png", "image/gif"}
+	for _, t := range allowedTypes {
+		if fileType == t {
+			// Jika valid, reset file pointer
+			file.Seek(0, 0)
+			return true, nil
+		}
 	}
 
-	// Return the public URL
-	return fmt.Sprintf(domain, filename), nil
+	// Jika tipe file tidak valid
+	return false, errors.New("only image files are allowed")
 }

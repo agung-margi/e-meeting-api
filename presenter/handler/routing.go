@@ -73,28 +73,26 @@ func RoutingRestAPI(e *echo.Echo) error {
 	e.PUT("/rooms/:id", roomHandler.UpdateRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 	e.DELETE("/rooms/:id", roomHandler.DeleteRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 
-	// Routing API Reservation
+	// Routing API Inquiry & Reservation
+	inquiryRepo := repository.NewInquiryRepository(db)
 	reservationRepo := repository.NewReservationRepository(db)
-	reservationUsecase := usecase.NewReservationUseCase(reservationRepo)
+	inquiryUsecase := usecase.NewInquiryUseCase(inquiryRepo, roomRepo, snackRepo, reservationRepo)
+	inquiryHandler := NewInquiryHandler(inquiryUsecase)
+	reservationUsecase := usecase.NewReservationUseCase(reservationRepo, inquiryRepo)
 	reservationHandler := NewReservationHandler(reservationUsecase)
 
-	e.POST("/reservations", reservationHandler.SaveReservation, middleware.AuthMiddleware)
+	e.POST("/reservations/inquiry", inquiryHandler.SaveInquiry, middleware.AuthMiddleware)
+
+	// Routing API Reservation
+
+	e.POST("/reservations/:inquiry_id", reservationHandler.SaveReservation, middleware.AuthMiddleware)
 	e.GET("/reservations/:id", reservationHandler.GetReservation, middleware.AuthMiddleware)
 	e.GET("/reservations", reservationHandler.GetReservations, middleware.AuthMiddleware)
 	e.PUT("/reservations/:id/pay", reservationHandler.PayReservation, middleware.AuthMiddleware)
 	e.PUT("/reservations/:id/cancel", reservationHandler.CancelReservation, middleware.AuthMiddleware)
 	e.GET("/room-schedule", reservationHandler.GetRoomSchedule, middleware.AuthMiddleware)
 
-	inquiryRepo := repository.NewInquiryRepository(db)
-	inquiryUsecase := usecase.NewInquiryUseCase(inquiryRepo, roomRepo, snackRepo)
-	inquiryHandler := NewInquiryHandler(inquiryUsecase)
+	e.Static("/photos", "/public/photos")
 
-	e.POST("/reservations/inquiry", inquiryHandler.SaveInquiry, middleware.AuthMiddleware)
 	return nil
 }
-
-// Routing API
-
-// 	e.POST("/reservations", reservationHandler.SaveReservation)
-// 	e.GET("/get-availability", reservationHandler.CheckAvailability)
-// 	e.GET("/get-room-schedule", reservationHandler.CheckRoomSchedule)

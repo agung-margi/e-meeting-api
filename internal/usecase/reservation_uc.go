@@ -10,29 +10,18 @@ import (
 )
 
 type reservationUseCase struct {
-	repo repository.ReservationRepository
+	inquiryRepo repository.InquiryRepository
+	repo        repository.ReservationRepository
 }
 
-func NewReservationUseCase(repo repository.ReservationRepository) ReservationUseCase {
-	return &reservationUseCase{repo: repo}
+func NewReservationUseCase(repo repository.ReservationRepository, inquiryRepo repository.InquiryRepository) ReservationUseCase {
+	return &reservationUseCase{
+		repo:        repo,
+		inquiryRepo: inquiryRepo}
 }
 
-func (u *reservationUseCase) GetReservation(ctx context.Context, id int) ([]model.ReservationDetailsResponse, error) {
-	reservation, err := u.repo.GetReservationDetails(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return reservation, nil
-}
-
-func (u *reservationUseCase) CheckAvailability(ctx context.Context, roomId int, startTime string, endTime string) (bool, error) {
-	avalilable, err := u.repo.CheckAvailability(ctx, roomId, startTime, endTime)
-	if err != nil {
-		return false, err
-	}
-
-	return !avalilable, nil
+func (u *reservationUseCase) GetReservation(ctx context.Context, reservationID int) (*[]model.ReservationDetailsResponse, error) {
+	return u.repo.GetReservationDetails(ctx, reservationID)
 }
 
 func (u *reservationUseCase) GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]entity.RoomSchedule, error) {
@@ -74,6 +63,9 @@ func (u *reservationUseCase) CancelReservation(ctx context.Context, id int, user
 	if err != nil {
 		return err
 	}
+	if reservation.UserID != userId && !isAdmin {
+		return errors.New("unauthorized")
+	}
 
 	if reservation.Status == "paid" {
 		return errors.New("reservation that has already been paid")
@@ -94,106 +86,58 @@ func (u *reservationUseCase) CancelReservation(ctx context.Context, id int, user
 	return u.repo.UpdateStatus(ctx, id, "cancelled")
 }
 
-func (u *reservationUseCase) SaveReservation(ctx context.Context, reservationRequest *model.ReservationRequest, userId int) (*model.ReservationResponse, error) {
+func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int) (*entity.Reservation, error) {
+	if u.inquiryRepo == nil {
+		return nil, errors.New("inquiry repository is not initialized")
+	}
 
-	startTime, err := time.Parse(time.RFC3339, reservationRequest.StartTime)
+	inquiry, err := u.inquiryRepo.GetByID(ctx, inquiryId, userId)
+
 	if err != nil {
-		return nil, err
-	}
-	endTime, err := time.Parse(time.RFC3339, reservationRequest.EndTime)
-	if err != nil {
-		return nil, err
+		return nil, errors.New("inquiry not found")
 	}
 
-	if startTime.After(endTime) {
-		return nil, errors.New("invalid reservation duration: start time should be before end time")
+	if inquiry == nil {
+		return nil, errors.New("inquiry not found")
 	}
 
-	if startTime.Before(time.Now()) {
-		return nil, errors.New("invalid reservation start time: start time should be in the future")
-	}
-
-	avalilable, err := u.CheckAvailability(ctx, reservationRequest.RoomID, reservationRequest.StartTime, reservationRequest.EndTime)
-	if err != nil {
-		return nil, err
-	}
-
-	if !avalilable {
-		return nil, errors.New("room is not available for the selected date and time")
-	}
-
-	roomPricePerHour, err := u.repo.GetRoomPriceByID(ctx, reservationRequest.RoomID)
+	// Cek ketersediaan ruangan
+	available, err := u.repo.CheckAvailability(ctx, inquiry.RoomID, inquiry.StartTime, inquiry.EndTime)
 	if err != nil {
 		return nil, err
 	}
 
-	duration := endTime.Sub(startTime).Hours()
-	if duration <= 0 {
-		return nil, errors.New("invalid reservation duration: start time should be before end time")
-	}
-	totalRoomPrice := int(duration) * roomPricePerHour
-
-	snackPrice := 0
-
-	if reservationRequest.SnackID != nil {
-		snackPrice, err = u.repo.GetSnackPriceByID(ctx, *reservationRequest.SnackID)
-		if err != nil {
-			return nil, err
-		}
+	// Jika ruangan tidak tersedia, return error
+	if !available {
+		return nil, errors.New("room is not available for the selected time")
 	}
 
-	snackID := reservationRequest.SnackID
-	totalSnackPrice := snackPrice * reservationRequest.Participants
-	totalPrice := totalRoomPrice + totalSnackPrice
-
+	// Buat reservation berdasarkan inquiry
 	reservation := &entity.Reservation{
-		UserID: userId,
-		RoomID: reservationRequest.RoomID,
-		// StartTime:   startTime,
-		// EndTime:     endTime,
-		// BookingDate: time.Now(),
-		RoomPrice:  totalRoomPrice,
-		SnackPrice: totalSnackPrice,
-		TotalPrice: totalPrice,
-		Status:     "booked",
-		// CreatedAt:   time.Now(),
-		// UpdatedAt:   time.Now(),
+		UserID:      userId,
+		RoomID:      inquiry.RoomID,
+		StartTime:   inquiry.StartTime,
+		EndTime:     inquiry.EndTime,
+		BookingDate: inquiry.BookingDate,
+		RoomPrice:   inquiry.RoomPrice,
+		TotalPrice:  inquiry.TotalPrice,
 	}
 
-	err = u.repo.SaveReservation(ctx, reservation, &entity.ReservationDetails{
-		Name:         reservationRequest.Name,
-		Phone:        reservationRequest.Phone,
-		Company:      reservationRequest.Company,
-		SnackID:      snackID,
-		Participants: reservationRequest.Participants,
-		Notes:        reservationRequest.Notes,
+	// Panggil fungsi Save pada repository
+	reservation, err = u.repo.Save(ctx, reservation, &entity.ReservationDetails{
+		ReservationID: reservation.ID,
+		Name:          inquiry.Name,
+		Phone:         inquiry.Phone,
+		Company:       inquiry.Company,
+		SnackID:       inquiry.SnackID,
+		Participants:  inquiry.Participants,
+		Notes:         inquiry.Notes,
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	details, err := u.repo.GetReservationDetails(ctx, reservation.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	response := &model.ReservationResponse{
-		ReservationID: reservation.ID,
-		UserID:        reservation.UserID,
-		RoomID:        reservation.RoomID,
-		// StartTime:     reservation.StartTime,
-		// EndTime:       reservation.EndTime,
-		BookingDate: time.Now(),
-		RoomPrice:   reservation.RoomPrice,
-		SnackPrice:  reservation.SnackPrice,
-		TotalPrice:  reservation.TotalPrice,
-		Status:      reservation.Status,
-		Details:     details,
-	}
-
-	return response, nil
+	return reservation, nil
 }
-
 func (u *reservationUseCase) GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error) {
 	reservations, err := u.repo.GetAll(ctx, startDate, endDate, roomType, status, userID)
 	if err != nil {

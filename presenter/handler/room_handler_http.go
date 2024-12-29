@@ -2,10 +2,15 @@ package handler
 
 import (
 	"e-meeting-api/internal/usecase"
+	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -87,20 +92,63 @@ func (h *roomHandler) GetRooms(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
-// @Param room body model.RoomRequest true "Room Request"
+//
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 500 {object} response.APIResponse
 // @Router /rooms [post]
 func (h *roomHandler) SaveRoom(c echo.Context) error {
+
+	fmt.Println("Received Headers:", c.Request().Header)
 	room := &model.RoomRequest{}
-	if err := c.Bind(room); err != nil {
+
+	room.Name = c.FormValue("name")
+	room.RoomType, _ = strconv.Atoi(c.FormValue("room_type_id"))
+	room.Price, _ = strconv.Atoi(c.FormValue("price"))
+	room.Capacity, _ = strconv.Atoi(c.FormValue("capacity"))
+
+	fmt.Printf("RoomRequest after manual binding: %+v\n", room)
+
+	err := c.Bind(room)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request body"))
 	}
-	err := h.roomUseCase.SaveRoom(c.Request().Context(), room)
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid file"))
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("failed to open file"))
+	}
+	defer src.Close()
+
+	// Validasi file gambar
+	isValid, err := util.ValidateImageFile(src)
+	if !isValid {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse(err.Error()))
+	}
+	// Jika file ada, proses upload
+	ext := filepath.Ext(file.Filename)
+	randomFileName := util.GenerateRandomString(25) + ext
+	uploadPath := "public/photos/" + randomFileName
+
+	err = util.SaveUploadedFile(file, uploadPath)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to upload image"))
+	}
+
+	baseURL := os.Getenv("BASE_URL")
+	imgUrl := baseURL + "/photos/" + randomFileName
+	room.ImgUrl = imgUrl
+
+	err = h.roomUseCase.SaveRoom(c.Request().Context(), room)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse(err.Error()))
 	}
+
 	return c.JSON(http.StatusOK, response.SuccessResponse("room saved successfully", room))
 }
 
@@ -150,14 +198,67 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid room id"))
 	}
 
-	roomRequest := &model.RoomRequest{}
-	if err := c.Bind(roomRequest); err != nil {
-		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request body"))
+	oldRoom, err := h.roomUseCase.GetByID(c.Request().Context(), id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to retrieve room details"))
 	}
 
-	err = h.roomUseCase.UpdateRoom(c.Request().Context(), id, roomRequest)
+	fmt.Println("Received Headers:", c.Request().Header)
+	room := &model.RoomRequest{}
+
+	room.Name = c.FormValue("name")
+	room.RoomType, _ = strconv.Atoi(c.FormValue("room_type_id"))
+	room.Price, _ = strconv.Atoi(c.FormValue("price"))
+	room.Capacity, _ = strconv.Atoi(c.FormValue("capacity"))
+
+	file, err := c.FormFile("image")
+	if err == nil {
+
+		src, err := file.Open()
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("failed to open file"))
+		}
+		defer src.Close()
+
+		// Validasi file gambar
+		isValid, err := util.ValidateImageFile(src)
+		if !isValid {
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse(err.Error()))
+		}
+
+		src.Seek(0, 0)
+		// Jika file ada, proses upload
+		ext := filepath.Ext(file.Filename)
+		randomFileName := util.GenerateRandomString(25) + ext
+		uploadPath := "public/photos/" + randomFileName
+
+		err = util.SaveUploadedFile(file, uploadPath)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to upload image"))
+		}
+
+		if oldRoom.ImgUrl != "" {
+			oldFilePath := strings.Replace(oldRoom.ImgUrl, os.Getenv("BASE_URL")+"/photos/", "public/photos/", 1)
+			if err := os.Remove(oldFilePath); err != nil {
+				fmt.Println("Failed to delete old file:", err)
+			}
+		}
+
+		baseURL := os.Getenv("BASE_URL")
+		imgUrl := baseURL + "/photos/" + randomFileName
+		room.ImgUrl = imgUrl
+	} else {
+		// Jika tidak ada file, gunakan gambar lama dari database
+		existingRoom, err := h.roomUseCase.GetByID(c.Request().Context(), id)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to retrieve existing room details"))
+		}
+		room.ImgUrl = existingRoom.ImgUrl
+	}
+
+	err = h.roomUseCase.UpdateRoom(c.Request().Context(), id, room)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to update room"))
+		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse(err.Error()))
 	}
 
 	updatedRoom, err := h.roomUseCase.GetByID(c.Request().Context(), id)

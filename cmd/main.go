@@ -13,8 +13,6 @@ import (
 
 func main() {
 	e := echo.New()
-
-	e.Static("/uploads", "e-meeting-api/uploads")
 	if err := handler.RoutingRestAPI(e); err != nil {
 		e.Logger.Fatal(err)
 	}

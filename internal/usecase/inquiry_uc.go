@@ -11,13 +11,14 @@ import (
 )
 
 type inquiryUsecase struct {
-	inquiryRepo repository.InquiryRepository
-	roomRepo    repository.RoomRepository
-	snackRepo   repository.SnackRepository
+	inquiryRepo     repository.InquiryRepository
+	roomRepo        repository.RoomRepository
+	snackRepo       repository.SnackRepository
+	reservationRepo repository.ReservationRepository
 }
 
-func NewInquiryUseCase(inquiryRepo repository.InquiryRepository, roomRepo repository.RoomRepository, snackRepo repository.SnackRepository) InquiryUsecase {
-	return &inquiryUsecase{inquiryRepo: inquiryRepo, roomRepo: roomRepo, snackRepo: snackRepo}
+func NewInquiryUseCase(inquiryRepo repository.InquiryRepository, roomRepo repository.RoomRepository, snackRepo repository.SnackRepository, reservationRepo repository.ReservationRepository) InquiryUsecase {
+	return &inquiryUsecase{inquiryRepo: inquiryRepo, roomRepo: roomRepo, snackRepo: snackRepo, reservationRepo: reservationRepo}
 }
 
 func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservation) (*entity.Inquiry, error) {
@@ -42,8 +43,6 @@ func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservati
 	end := reservation.EndTime
 	format := "2006-01-02 15:00"
 
-	// format := "2006-01-02 15:00"
-	// date := req.BookingDate
 	startStr := fmt.Sprintf("%s %s", date, start)
 	endStr := fmt.Sprintf("%s %s", date, end)
 
@@ -72,6 +71,17 @@ func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservati
 	}
 	if reservation.Participants > room.Capacity {
 		return nil, errors.New("room capacity is not enough")
+	}
+
+	// Cek ketersediaan ruangan
+	available, err := u.reservationRepo.CheckAvailability(ctx, reservation.RoomID, startStr, endStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Jika ruangan tidak tersedia, return error
+	if !available {
+		return nil, errors.New("room is not available for the selected time")
 	}
 
 	// Calculate duration
@@ -128,4 +138,8 @@ func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservati
 
 	inquiry.ID = inquiry.ID
 	return inquiry, nil
+}
+
+func (u *inquiryUsecase) GetByID(ctx context.Context, id int, userId int) (*entity.Inquiry, error) {
+	return u.inquiryRepo.GetByID(ctx, id, userId)
 }

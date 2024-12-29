@@ -6,7 +6,6 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -20,9 +19,13 @@ func NewReservationRepository(db *sql.DB) ReservationRepository {
 
 func (r *reservationRepo) GetByID(ctx context.Context, id int) (*entity.Reservation, error) {
 	reservation := &entity.Reservation{}
-	query := "SELECT * FROM reservations WHERE id = $1"
+	query := `
+    SELECT id, room_id,user_id, start_time, end_time, status, created_at, updated_at
+    FROM reservations
+    WHERE id = $1
+`
 	row := r.DB.QueryRowContext(ctx, query, id)
-	err := row.Scan(&reservation.ID, &reservation.RoomID, &reservation.StartTime, &reservation.EndTime, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
+	err := row.Scan(&reservation.ID, &reservation.RoomID, &reservation.UserID, &reservation.StartTime, &reservation.EndTime, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("reservation not found")
@@ -102,7 +105,7 @@ func (r *reservationRepo) GetRoomPriceByID(ctx context.Context, roomID int) (int
 	}
 	return price, nil
 }
-func (r *reservationRepo) SaveReservation(ctx context.Context, reservation *entity.Reservation, details *entity.ReservationDetails) error {
+func (r *reservationRepo) Save(ctx context.Context, reservation *entity.Reservation, details *entity.ReservationDetails) (*entity.Reservation, error) {
 	query := "INSERT INTO reservations (user_id, room_id, start_time, end_time, booking_date, room_price, snack_price, total_price, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now(), now()) RETURNING id"
 	row := r.DB.QueryRowContext(ctx, query,
 		reservation.UserID,
@@ -116,7 +119,7 @@ func (r *reservationRepo) SaveReservation(ctx context.Context, reservation *enti
 		"booked",
 	)
 	if err := row.Scan(&reservation.ID); err != nil {
-		return err
+		return nil, err
 	}
 
 	details.ReservationID = reservation.ID
@@ -132,10 +135,10 @@ func (r *reservationRepo) SaveReservation(ctx context.Context, reservation *enti
 		details.Participants,
 		details.Notes)
 	if err := detail.Scan(&details.ID); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return reservation, nil
 }
 
 func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entity.Reservation, error) {
@@ -173,12 +176,6 @@ func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entit
 	}
 
 	return reservations, nil
-}
-
-func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationID int, status string) error {
-	query := "UPDATE reservations SET status = $1 WHERE id = $2"
-	_, err := r.DB.ExecContext(ctx, query, status, reservationID)
-	return err
 }
 
 func (r *reservationRepo) GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error) {
@@ -256,7 +253,7 @@ func (r *reservationRepo) GetRoomSchedule(ctx context.Context, roomID int, date 
 	return err
 }
 
-func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservationID int) ([]model.ReservationDetailsResponse, error) {
+func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservationID int) (*[]model.ReservationDetailsResponse, error) {
 	query := `
 		SELECT 
 			r.user_id AS user_id,
@@ -343,7 +340,7 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 			Name:            customerName,
 			Phone:           customerPhone,
 			Company:         companyName,
-			DateReservation: dateReservation,
+			DateReservation: dateReservation.Format("2006-01-02"),
 			Duration:        duration,
 			Participants:    participants,
 		},
@@ -351,9 +348,9 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 
 	// Populate Consumption
 	if snackID != 0 {
-		reservation.Snacks = []model.SnackResponse{
+		reservation.SnacksDetails = []model.SnackDetailsResponse{
 			{
-				SnackID:  snackID,
+				SnackID:  &snackID,
 				Category: snackCategory,
 				Name:     snackName,
 				Price:    snackPrice,
@@ -365,12 +362,13 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 	reservation.TotalPrice = []model.ReservationTotalPriceResponse{
 		{
 			RoomName:        roomName,
-			CountRoomPrice:  fmt.Sprintf("%d x %d", duration, roomPrice),
+			Duration:        duration,
+			RoomPrice:       roomPrice,
 			TotalRoomPrice:  totalRoomPrice,
 			SnackName:       snackName,
-			CountSnackPrice: fmt.Sprintf("%d x %d", participants, snackPrice),
-			TotalSnackPrice: totalSnackPrice,
-			TotalPrice:      totalPrice,
+			Qty:             participants,
+			TotalSnackPrice: snackPrice * participants,
+			TotalPrice:      snackPrice*participants + roomPrice*duration,
 		},
 	}
 
@@ -379,5 +377,11 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 	reservation.ReservationID = reservationID
 	reservation.UserID = userID
 
-	return []model.ReservationDetailsResponse{*reservation}, nil
+	return &[]model.ReservationDetailsResponse{*reservation}, nil
+}
+
+func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationID int, status string) error {
+	query := "UPDATE reservations SET status = $1 WHERE id = $2"
+	_, err := r.DB.ExecContext(ctx, query, status, reservationID)
+	return err
 }

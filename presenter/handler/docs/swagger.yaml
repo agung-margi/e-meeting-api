@@ -242,12 +242,11 @@ paths:
       - application/json
       description: Menyimpan reservation
       parameters:
-      - description: Reservation Request
-        in: body
-        name: reservation
+      - description: Inquiry ID
+        in: path
+        name: inquiry_id
         required: true
-        schema:
-          $ref: '#/definitions/model.ReservationRequest'
+        type: integer
       produces:
       - application/json
       responses:
@@ -269,10 +268,10 @@ paths:
       tags:
       - Reservation
   /reservations/{id}:
-    post:
+    get:
       consumes:
       - application/json
-      description: Mendapatkan reservation berdasarkan id
+      description: Mendapatkan reservation
       parameters:
       - description: Reservation ID
         in: path
@@ -290,8 +289,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.APIResponse'
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/response.APIResponse'
       security:

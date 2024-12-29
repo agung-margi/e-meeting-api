@@ -48,3 +48,16 @@ func (r *inquiryRepo) Save(ctx context.Context, inquiry *entity.Inquiry) (*entit
 	fmt.Println("inquiry saved with ID:", inquiry.ID)
 	return inquiry, nil
 }
+
+func (r *inquiryRepo) GetByID(ctx context.Context, id int, userId int) (*entity.Inquiry, error) {
+	query := "SELECT * FROM inquiries WHERE id = $1 AND user_id = $2"
+	inquiry := &entity.Inquiry{}
+	err := r.DB.QueryRowContext(ctx, query, id, userId).Scan(&inquiry.ID, &inquiry.UserID, &inquiry.RoomID, &inquiry.RoomName, &inquiry.RoomType, &inquiry.RoomCapacity, &inquiry.RoomPrice,
+		&inquiry.BookingDate, &inquiry.StartTime, &inquiry.EndTime, &inquiry.Duration, &inquiry.Name, &inquiry.Phone, &inquiry.Company,
+		&inquiry.Participants, &inquiry.SnackID, &inquiry.SnackName, &inquiry.SnackCategory, &inquiry.SnackPrice,
+		&inquiry.TotalRoomPrice, &inquiry.TotalSnackPrice, &inquiry.TotalPrice, &inquiry.Notes, &inquiry.CreatedAt, &inquiry.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get inquiry: %w", err)
+	}
+	return inquiry, nil
+}

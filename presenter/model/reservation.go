@@ -35,7 +35,7 @@ type ReservationDetailsResponse struct {
 	UserID        int                             `json:"userId"`
 	RoomDetails   []RoomDetailsResponse           `json:"roomDetails"`
 	BookDetails   []BookingDetailsResponse        `json:"bookDetails"`
-	Snacks        []SnackResponse                 `json:"consumption"`
+	SnacksDetails []SnackDetailsResponse          `json:"consumption"`
 	TotalPrice    []ReservationTotalPriceResponse `json:"totalPrice"`
 	Notes         string                          `json:"notes"`
 }
@@ -48,16 +48,16 @@ type RoomDetailsResponse struct {
 }
 
 type BookingDetailsResponse struct {
-	Name            string    `json:"name"`
-	Phone           string    `json:"phone"`
-	Company         string    `json:"company"`
-	DateReservation time.Time `json:"dateReservation"`
-	Duration        int       `json:"duration"`
-	Participants    int       `json:"participants"`
+	Name            string `json:"name"`
+	Phone           string `json:"phone"`
+	Company         string `json:"company"`
+	DateReservation string `json:"dateReservation"`
+	Duration        int    `json:"duration"`
+	Participants    int    `json:"participants"`
 }
 
-type SnackResponse struct {
-	SnackID  int    `json:"snackId"`
+type SnackDetailsResponse struct {
+	SnackID  *int   `json:"snackId"`
 	Category string `json:"category"`
 	Name     string `json:"name"`
 	Price    int    `json:"price"`
@@ -65,11 +65,11 @@ type SnackResponse struct {
 
 type ReservationTotalPriceResponse struct {
 	RoomName        string `json:"roomName"`
-	CountRoomPrice  string `json:"countRoomPrice"`
-	TotalRoomPrice  int    `json:"roomPrice"`
+	Duration        int    `json:"duration"`
+	RoomPrice       int    `json:"roomPrice"`
+	TotalRoomPrice  int    `json:"totalRoomPrice"`
 	SnackName       string `json:"snackName"`
-	CountSnackPrice string `json:"countSnackPrice"`
-	TotalSnackPrice int    `json:"snackPrice"`
+	Qty             int    `json:"Qty"`
+	TotalSnackPrice int    `json:"totalSnackPrice"`
 	TotalPrice      int    `json:"totalPrice"`
 }
-

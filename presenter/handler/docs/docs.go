@@ -214,13 +214,11 @@ const docTemplate = `{
                 "summary": "Save reservation",
                 "parameters": [
                     {
-                        "description": "Reservation Request",
-                        "name": "reservation",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.ReservationRequest"
-                        }
+                        "type": "integer",
+                        "description": "Inquiry ID",
+                        "name": "inquiry_id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -297,13 +295,13 @@ const docTemplate = `{
             }
         },
         "/reservations/{id}": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Mendapatkan reservation berdasarkan id",
+                "description": "Mendapatkan reservation",
                 "consumes": [
                     "application/json"
                 ],
@@ -336,8 +334,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.APIResponse"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/response.APIResponse"
                         }

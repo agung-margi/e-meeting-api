@@ -2,9 +2,8 @@ package handler
 
 import (
 	"e-meeting-api/internal/usecase"
-	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -22,9 +21,48 @@ func NewReservationHandler(useCase usecase.ReservationUseCase) ReservationHandle
 	return &reservationHandler{useCase: useCase}
 }
 
-// GetReservation
+// SaveReservation
+// @Summary Save reservation
+// @Description Menyimpan reservation
+// @Tags Reservation
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param inquiry_id path int true "Inquiry ID"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /reservations [post]
+func (h *reservationHandler) SaveReservation(c echo.Context) error {
+	// Mendapatkan userId dari context (middleware)
+	userId := c.Get("user_id").(float64)
+
+	// Mendapatkan id inquiry dari request parameter
+	inquiryIdParam := c.Param("inquiry_id")
+	inquiryId, err := strconv.Atoi(inquiryIdParam)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid inquiry id"))
+	}
+
+	// Memanggil use case untuk menyimpan reservation berdasarkan inquiryId dan userId
+	reservation, err := h.useCase.Save(c.Request().Context(), inquiryId, int(userId))
+	if err != nil {
+		if strings.Contains(err.Error(), "inquiry not found") {
+			return c.JSON(http.StatusNotFound, response.ErrorResponse("inquiry not found", http.StatusNotFound))
+		}
+		if strings.Contains(err.Error(), "room is not available") {
+			return c.JSON(http.StatusConflict, response.ErrorResponse(err.Error(), http.StatusConflict))
+		}
+
+		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse(err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, response.SuccessResponse("New Reservation Successfully Added", reservation))
+}
+
+// GetReservation by id
 // @Summary Get reservation by id
-// @Description Mendapatkan reservation berdasarkan id
+// @Description Mendapatkan reservation
 // @Tags Reservation
 // @Accept json
 // @Produce json
@@ -32,8 +70,8 @@ func NewReservationHandler(useCase usecase.ReservationUseCase) ReservationHandle
 // @Param id path int true "Reservation ID"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
-// @Failure 404 {object} response.APIResponse
-// @Router /reservations/{id} [post]
+// @Failure 500 {object} response.APIResponse
+// @Router /reservations/{id} [get]
 func (h *reservationHandler) GetReservation(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -53,72 +91,17 @@ func (h *reservationHandler) GetReservation(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, response.NotFoundResponse("reservation not found"))
 	}
 
-	reservationUserID := reservation[0].UserID
+	if len(*reservation) == 0 {
+		return c.JSON(http.StatusNotFound, response.NotFoundResponse("reservation not found"))
+	}
+
+	reservationUserID := (*reservation)[0].UserID
 
 	if reservationUserID != userID && !isAdmin {
 		return c.JSON(http.StatusForbidden, response.ErrorResponse("forbidden", http.StatusForbidden))
 	}
 
 	return c.JSON(http.StatusOK, response.SuccessResponse("success get reservation", reservation))
-}
-
-// SaveReservation
-// @Summary Save reservation
-// @Description Menyimpan reservation
-// @Tags Reservation
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param reservation body model.ReservationRequest true "Reservation Request"
-// @Success 200 {object} response.APIResponse
-// @Failure 400 {object} response.APIResponse
-// @Failure 500 {object} response.APIResponse
-// @Router /reservations [post]
-func (h *reservationHandler) SaveReservation(c echo.Context) error {
-
-	userId := c.Get("user_id").(float64)
-
-	var req model.ReservationRequest
-	if err := json.NewDecoder(c.Request().Body).Decode(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request body"))
-	}
-	req.UserID = int(userId)
-
-	reservation, err := h.useCase.SaveReservation(c.Request().Context(), &req, int(userId))
-	if err != nil {
-
-		if strings.Contains(err.Error(), "invalid reservation start time") {
-			return c.JSON(http.StatusBadRequest, response.BadRequestResponse(err.Error()))
-		}
-		if strings.Contains(err.Error(), "room is not available") {
-			return c.JSON(http.StatusConflict, response.ErrorResponse(err.Error(), http.StatusConflict))
-		}
-
-		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse(err.Error()))
-	}
-
-	return c.JSON(http.StatusOK, response.SuccessResponse("New Reservation Success Added", reservation))
-}
-
-func (h *reservationHandler) CheckAvailability(c echo.Context) error {
-	roomId, err := strconv.Atoi(c.QueryParam("room_id"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid room id"))
-	}
-
-	startTime := c.QueryParam("start_time")
-	endTime := c.QueryParam("end_time")
-
-	available, err := h.useCase.CheckAvailability(c.Request().Context(), roomId, startTime, endTime)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.ErrorResponse("internal server error", http.StatusInternalServerError))
-	}
-
-	if available {
-		return c.JSON(http.StatusOK, response.SuccessResponse("available", nil))
-	} else {
-		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("unavailable"))
-	}
 }
 
 // CancelReservation
@@ -140,9 +123,12 @@ func (h *reservationHandler) CancelReservation(c echo.Context) error {
 	}
 
 	userId := c.Get("user_id").(float64)
+	fmt.Println(userId)
 	isAdmin := c.Get("is_admin").(bool)
+	fmt.Println(isAdmin)
 
-	err = h.useCase.PayReservation(c.Request().Context(), id, int(userId), isAdmin)
+	err = h.useCase.CancelReservation(c.Request().Context(), id, int(userId), isAdmin)
+
 	if err != nil {
 		switch err.Error() {
 		case "unauthorized":
@@ -156,7 +142,7 @@ func (h *reservationHandler) CancelReservation(c echo.Context) error {
 		case "reservation that has already been cancelled":
 			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot cancel a reservation that has already been cancelled"))
 		default:
-			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to cancel reservation"))
+			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse(err.Error()))
 		}
 	}
 
