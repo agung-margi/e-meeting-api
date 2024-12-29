@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
 	"errors"
-	"time"
 )
 
 type userRepo struct {
@@ -63,15 +62,17 @@ func (r *userRepo) SaveUser(ctx context.Context, user *entity.User) error {
 func (r *userRepo) UpdateUser(ctx context.Context, id int, user *entity.User) error {
 	query := `
 			UPDATE users
-			SET password = $1, img_url = $2, is_active = $3, language = $4 updated_at = $5
-			WHERE id = $6
+			SET username = $1, email = $2, password = $3, is_admin = $4, img_url = $5, is_active = $6, language = $7, updated_at = now()
+			WHERE id = $8
 	`
 	_, err := r.DB.ExecContext(ctx, query,
+		user.Username,
+		user.Email,
 		user.Password,
+		user.IsAdmin,
 		user.ImgUrl,
 		user.IsActive,
 		user.Language,
-		time.Now(),
 		id,
 	)
 	return err

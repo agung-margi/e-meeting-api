@@ -55,10 +55,13 @@ func (u *userUseCase) UpdateUser(ctx context.Context, id int, user *model.Update
 	}
 
 	updatedUser := &entity.User{
-		Password:  user.Password,
-		ImgUrl:    user.ImgUrl,
-		IsActive:  user.IsActive,
-		UpdatedAt: time.Now(),
+		Username: user.Username,
+		Email:    user.Email,
+		Password: user.Password,
+		IsAdmin:  user.IsAdmin,
+		ImgUrl:   user.ImgUrl,
+		IsActive: user.IsActive,
+		Language: user.Language,
 	}
 	return u.repo.UpdateUser(ctx, id, updatedUser)
 }

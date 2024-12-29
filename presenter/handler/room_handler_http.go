@@ -85,14 +85,18 @@ func (h *roomHandler) GetRooms(c echo.Context) error {
 	return c.JSON(http.StatusOK, rooms)
 }
 
-// SaveRoom
-// @Summary Save room
-// @Description Menyimpan room
+// CreateRoom
+// @Summary Create room
+// @Description Menyimpan room dengan upload file gambar
 // @Tags Room
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Security ApiKeyAuth
-//
+// @Param name formData string true "Room Name"
+// @Param room_type_id formData int true "Room Type ID"
+// @Param price formData int true "Price"
+// @Param capacity formData int true "Capacity"
+// @Param image formData file true "Room Image"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 500 {object} response.APIResponse

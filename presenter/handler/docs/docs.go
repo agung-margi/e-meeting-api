@@ -562,9 +562,9 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Menyimpan room",
+                "description": "Menyimpan room dengan upload file gambar",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -572,16 +572,42 @@ const docTemplate = `{
                 "tags": [
                     "Room"
                 ],
-                "summary": "Save room",
+                "summary": "Create room",
                 "parameters": [
                     {
-                        "description": "Room Request",
-                        "name": "room",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RoomRequest"
-                        }
+                        "type": "string",
+                        "description": "Room Name",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Room Type ID",
+                        "name": "room_type_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Price",
+                        "name": "price",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Capacity",
+                        "name": "capacity",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Room Image",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -912,7 +938,7 @@ const docTemplate = `{
                 ],
                 "description": "Memperbarui User berdasarkan id",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -930,13 +956,40 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Update User Request",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.UpdateUserRequest"
-                        }
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "IsAdmin",
+                        "name": "isAdmin",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "IsActive",
+                        "name": "isActive",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "User Image",
+                        "name": "image",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -1072,24 +1125,6 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1,
                     "example": 1
-                }
-            }
-        },
-        "model.UpdateUserRequest": {
-            "type": "object",
-            "properties": {
-                "imgUrl": {
-                    "type": "string",
-                    "example": "https://example.com/image.jpg"
-                },
-                "isActive": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 6,
-                    "example": "password"
                 }
             }
         },

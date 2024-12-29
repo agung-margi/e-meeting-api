@@ -82,9 +82,6 @@ func RoutingRestAPI(e *echo.Echo) error {
 	reservationHandler := NewReservationHandler(reservationUsecase)
 
 	e.POST("/reservations/inquiry", inquiryHandler.SaveInquiry, middleware.AuthMiddleware)
-
-	// Routing API Reservation
-
 	e.POST("/reservations/:inquiry_id", reservationHandler.SaveReservation, middleware.AuthMiddleware)
 	e.GET("/reservations/:id", reservationHandler.GetReservation, middleware.AuthMiddleware)
 	e.GET("/reservations", reservationHandler.GetReservations, middleware.AuthMiddleware)

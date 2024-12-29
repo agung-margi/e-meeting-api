@@ -78,19 +78,6 @@ definitions:
     - price
     - room_type
     type: object
-  model.UpdateUserRequest:
-    properties:
-      imgUrl:
-        example: https://example.com/image.jpg
-        type: string
-      isActive:
-        example: true
-        type: boolean
-      password:
-        example: password
-        minLength: 6
-        type: string
-    type: object
   model.UserRequest:
     properties:
       email:
@@ -468,15 +455,34 @@ paths:
       - Room
     post:
       consumes:
-      - application/json
-      description: Menyimpan room
+      - multipart/form-data
+      description: Menyimpan room dengan upload file gambar
       parameters:
-      - description: Room Request
-        in: body
-        name: room
+      - description: Room Name
+        in: formData
+        name: name
         required: true
-        schema:
-          $ref: '#/definitions/model.RoomRequest'
+        type: string
+      - description: Room Type ID
+        in: formData
+        name: room_type_id
+        required: true
+        type: integer
+      - description: Price
+        in: formData
+        name: price
+        required: true
+        type: integer
+      - description: Capacity
+        in: formData
+        name: capacity
+        required: true
+        type: integer
+      - description: Room Image
+        in: formData
+        name: image
+        required: true
+        type: file
       produces:
       - application/json
       responses:
@@ -494,7 +500,7 @@ paths:
             $ref: '#/definitions/response.APIResponse'
       security:
       - ApiKeyAuth: []
-      summary: Save room
+      summary: Create room
       tags:
       - Room
   /rooms/{id}:
@@ -689,7 +695,7 @@ paths:
       - User
     put:
       consumes:
-      - application/json
+      - multipart/form-data
       description: Memperbarui User berdasarkan id
       parameters:
       - description: User ID
@@ -697,12 +703,30 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Update User Request
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/model.UpdateUserRequest'
+      - description: Username
+        in: formData
+        name: username
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        type: string
+      - description: IsAdmin
+        in: formData
+        name: isAdmin
+        type: string
+      - description: IsActive
+        in: formData
+        name: isActive
+        type: string
+      - description: User Image
+        in: formData
+        name: image
+        type: file
       produces:
       - application/json
       responses:

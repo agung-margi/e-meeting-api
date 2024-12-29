@@ -10,10 +10,13 @@ type UserRequest struct {
 	Password string `json:"password" validate:"required,min=6" example:"password"`
 }
 type UpdateUserRequest struct {
+	Username string `json:"username" validate:"omitempty,min=2" example:"user1"`
+	Email    string `json:"email" validate:"omitempty,email" example:"user1@example.com"`
 	Password string `json:"password" validate:"omitempty,min=6" example:"password"`
+	IsAdmin  bool   `json:"isAdmin" validate:"omitempty" example:"true"`
 	ImgUrl   string `json:"imgUrl" validate:"omitempty,url" example:"https://example.com/image.jpg"`
 	IsActive bool   `json:"isActive" validate:"omitempty" example:"true"`
-	// UpdatedAt time.Time `json:"updatedAt" validate:"omitempty"`
+	Language string `json:"language" validate:"omitempty" example:"english"`
 }
 
 type LoginRequest struct {
