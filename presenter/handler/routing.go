@@ -88,6 +88,7 @@ func RoutingRestAPI(e *echo.Echo) error {
 	e.PUT("/reservations/:id/pay", reservationHandler.PayReservation, middleware.AuthMiddleware)
 	e.PUT("/reservations/:id/cancel", reservationHandler.CancelReservation, middleware.AuthMiddleware)
 	e.GET("/room-schedule", reservationHandler.GetRoomSchedule, middleware.AuthMiddleware)
+	e.GET("/reservations/schedules", reservationHandler.GetSchedules, middleware.AuthMiddleware)
 
 	e.Static("/photos", "/public/photos")
 

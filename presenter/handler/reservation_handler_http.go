@@ -307,3 +307,55 @@ func (h *reservationHandler) GetRoomSchedule(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, response.SuccessResponseWithCount("success get room schedule", reservations, len(reservations)))
 }
+
+// GetReservationSchedules
+// @Summary Get reservation schedules
+// @Description Mendapatkan jadwal reservation room berdasarkan rentang tanggal
+// @Tags Reservation
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param startDate query string true "Start date"
+// @Param endDate query string true "End date"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /reservations/schedules [get]
+func (h *reservationHandler) GetSchedules(c echo.Context) error {
+
+	startDateStr := c.QueryParam("startDate")
+	endDateStr := c.QueryParam("endDate")
+	fmt.Println(startDateStr, endDateStr)
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid start_date format"))
+	}
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid end_date format"))
+	}
+
+	if startDate.After(endDate) {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("start_date must be before end_date"))
+	}
+
+	schedules, err := h.useCase.GetSchedulesByDateRange(c.Request().Context(), startDate, endDate)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse(err.Error(), http.StatusInternalServerError))
+	}
+
+	currentTime := time.Now().UTC()
+	fmt.Println(currentTime)
+	for i := range schedules {
+		if currentTime.Before(schedules[i].StartTime) {
+			schedules[i].Status = "upcoming"
+		} else if currentTime.After(schedules[i].EndTime) {
+			schedules[i].Status = "done"
+		} else {
+			schedules[i].Status = "inprogress"
+		}
+	}
+
+	return c.JSON(http.StatusOK, response.SuccessResponseWithCount("success get schedules", schedules, len(schedules)))
+}

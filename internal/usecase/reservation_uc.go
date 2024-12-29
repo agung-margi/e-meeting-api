@@ -146,3 +146,7 @@ func (u *reservationUseCase) GetAll(ctx context.Context, startDate *time.Time, e
 
 	return reservations, nil
 }
+
+func (u *reservationUseCase) GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error) {
+	return u.repo.GetSchedulesByDateRange(ctx, startDate, endDate)
+}

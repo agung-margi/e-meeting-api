@@ -42,9 +42,11 @@ type ReservationDetails struct {
 }
 
 type RoomSchedule struct {
-	ID        int       `json:"id"`
-	RoomID    int       `json:"roomId"`
-	RoomName  string    `json:"roomName"`
-	StartTime time.Time `json:"startTime"`
-	EndTime   time.Time `json:"endTime"`
+	ID          int       `json:"id"`
+	RoomID      int       `json:"roomId"`
+	RoomName    string    `json:"roomName"`
+	BookingDate time.Time `json:"BookingDate"`
+	StartTime   time.Time `json:"startTime"`
+	EndTime     time.Time `json:"endTime"`
+	Status      string    `json:"status"`
 }

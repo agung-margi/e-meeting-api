@@ -385,3 +385,36 @@ func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationID int, s
 	_, err := r.DB.ExecContext(ctx, query, status, reservationID)
 	return err
 }
+
+func (r *reservationRepo) GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error) {
+	query := `SELECT 
+    r.id AS reservation_id,
+    rm.id AS room_id, 
+    rm.name AS room_name, 
+    r.booking_date, 
+    r.start_time, 
+    r.end_time
+FROM 
+    reservations r 
+JOIN 
+    rooms rm ON r.room_id = rm.id 
+WHERE 
+    r.booking_date BETWEEN $1 AND $2
+    AND r.status = 'paid'`
+	rows, err := r.DB.QueryContext(ctx, query, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	var schedules []entity.RoomSchedule
+	for rows.Next() {
+		schedule := entity.RoomSchedule{}
+		if err := rows.Scan(&schedule.ID, &schedule.RoomID, &schedule.RoomName, &schedule.BookingDate, &schedule.StartTime, &schedule.EndTime); err != nil {
+			return nil, err
+		}
+
+		schedules = append(schedules, schedule)
+	}
+
+	return schedules, nil
+}
