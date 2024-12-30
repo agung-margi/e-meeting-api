@@ -107,6 +107,40 @@ definitions:
 info:
   contact: {}
 paths:
+  /dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan data dashboard
+      parameters:
+      - description: Start date
+        in: query
+        name: start_date
+        type: string
+      - description: End date
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get dashboard data
+      tags:
+      - Reservation
   /login:
     post:
       consumes:

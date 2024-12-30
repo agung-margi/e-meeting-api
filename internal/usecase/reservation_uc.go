@@ -150,3 +150,38 @@ func (u *reservationUseCase) GetAll(ctx context.Context, startDate *time.Time, e
 func (u *reservationUseCase) GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error) {
 	return u.repo.GetSchedulesByDateRange(ctx, startDate, endDate)
 }
+
+func (u *reservationUseCase) GetDashboardData(ctx context.Context, startDate, endDate time.Time) (entity.Dashboard, error) {
+	// Ambil data dashboard dan room omzet dari repository
+	dashboard, err := u.repo.GetDashboardDataByDateRange(ctx, startDate, endDate)
+	if err != nil {
+		return entity.Dashboard{}, err
+	}
+
+	roomOmzet, err := u.repo.GetRoomOmzetByDateRange(ctx, startDate, endDate)
+	if err != nil {
+		return entity.Dashboard{}, err
+	}
+
+	// Hitung presentase omzet per room
+	for i := range roomOmzet {
+		if dashboard.TotalOmzet > 0 {
+			roomOmzet[i].Presentage = (float64(roomOmzet[i].RoomOmzet) / float64(dashboard.TotalOmzet)) * 100
+		} else {
+			roomOmzet[i].Presentage = 0
+		}
+	}
+
+	// Gabungkan dashboard dan roomOmzet ke dalam satu respons
+	response := entity.Dashboard{
+		TotalReservation: dashboard.TotalReservation,
+		TotalSnackPrice:  dashboard.TotalSnackPrice,
+		TotalPrice:       dashboard.TotalPrice,
+		TotalRoom:        dashboard.TotalRoom,
+		TotalVisitor:     dashboard.TotalVisitor,
+		TotalOmzet:       dashboard.TotalOmzet,
+		RoomDetails:      roomOmzet,
+	}
+
+	return response, nil
+}

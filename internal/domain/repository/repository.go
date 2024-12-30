@@ -47,6 +47,8 @@ type ReservationRepository interface {
 	UpdateStatus(ctx context.Context, id int, status string) error
 	GetReservationsCountByRoomAndDate(ctx context.Context, roomID int, date string) (int, error)
 	GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error)
+	GetDashboardDataByDateRange(ctx context.Context, startDate, endDate time.Time) (entity.Dashboard, error)
+	GetRoomOmzetByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomOmzetDetails, error)
 }
 
 type InquiryRepository interface {

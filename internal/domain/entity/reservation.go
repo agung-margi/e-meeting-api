@@ -50,3 +50,21 @@ type RoomSchedule struct {
 	EndTime     time.Time `json:"endTime"`
 	Status      string    `json:"status"`
 }
+
+type Dashboard struct {
+	TotalReservation int                `json:"totalReservation"`
+	TotalSnackPrice  int                `json:"totalSnackPrice"`
+	TotalPrice       int                `json:"totalPrice"`
+	TotalRoom        int                `json:"totalRooms"`
+	TotalVisitor     int                `json:"totalVisitors"`
+	TotalOmzet       int                `json:"totalOmzet"`
+	RoomDetails      []RoomOmzetDetails `json:"roomDetails"`
+}
+
+type RoomOmzetDetails struct {
+	RoomID           int     `json:"roomId"`
+	RoomName         string  `json:"roomName"`
+	TotalReservation int     `json:"totalReservation"`
+	RoomOmzet       int     `json:"roomOmzet"`
+	Presentage       float64 `json:"presentage"`
+}

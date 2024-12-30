@@ -20,6 +20,7 @@ type ReservationHandler interface {
 	PayReservation(c echo.Context) error
 	GetRoomSchedule(c echo.Context) error
 	GetSchedules(c echo.Context) error
+	GetDashboardData(c echo.Context) error
 }
 
 type SnackHandler interface {

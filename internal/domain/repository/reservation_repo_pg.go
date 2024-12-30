@@ -247,11 +247,11 @@ WHERE
 	return reservations, nil
 }
 
-func (r *reservationRepo) GetRoomSchedule(ctx context.Context, roomID int, date string) error {
-	query := " "
-	_, err := r.DB.ExecContext(ctx, query, roomID, date)
-	return err
-}
+// func (r *reservationRepo) GetRoomSchedule(ctx context.Context, roomID int, date string) error {
+// 	query := " "
+// 	_, err := r.DB.ExecContext(ctx, query, roomID, date)
+// 	return err
+// }
 
 func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservationID int) (*[]model.ReservationDetailsResponse, error) {
 	query := `
@@ -417,4 +417,85 @@ WHERE
 	}
 
 	return schedules, nil
+}
+
+func (r *reservationRepo) GetDashboardDataByDateRange(ctx context.Context, startDate, endDate time.Time) (entity.Dashboard, error) {
+	var dashboard entity.Dashboard
+
+	query := `
+	WITH reservation_data AS (
+		SELECT 
+			COUNT(*) AS total_reservation,
+			COALESCE(SUM(snack_price), 0) AS total_snack_price,
+			COALESCE(SUM(room_price), 0) AS total_price,
+			COUNT(DISTINCT r.room_id) AS total_rooms,
+			COALESCE(SUM(rd.participants), 0) AS total_visitors,
+			COALESCE(SUM(snack_price + room_price), 0) AS total_omzet
+		FROM reservations r
+		LEFT JOIN reservation_details rd ON rd.reservation_id = r.id
+		WHERE r.status = 'paid' AND r.booking_date BETWEEN $1 AND $2
+	)
+	SELECT 
+		rd.total_reservation,
+		rd.total_snack_price,
+		rd.total_price,
+		(SELECT COUNT(*) FROM rooms) AS total_rooms,  -- Total rooms without date filter
+		rd.total_visitors,
+		rd.total_omzet
+	FROM reservation_data rd
+	`
+
+	err := r.DB.QueryRowContext(ctx, query, startDate, endDate).Scan(
+		&dashboard.TotalReservation,
+		&dashboard.TotalSnackPrice,
+		&dashboard.TotalPrice,
+		&dashboard.TotalRoom,
+		&dashboard.TotalVisitor,
+		&dashboard.TotalOmzet,
+	)
+	if err != nil {
+		return entity.Dashboard{}, err
+	}
+
+	return dashboard, nil
+}
+
+func (r *reservationRepo) GetRoomOmzetByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomOmzetDetails, error) {
+	var roomOmzetDetails []entity.RoomOmzetDetails
+
+	// Query untuk menghitung omzet per ruangan
+	query := `
+		SELECT 
+			rm.id AS room_id,
+			rm.name AS room_name,
+			COALESCE(SUM(r.room_price + r.snack_price), 0) AS omzet
+		FROM 
+			rooms rm
+		LEFT JOIN 
+			reservations r ON r.room_id = rm.id AND r.status = 'paid' AND r.booking_date BETWEEN $1 AND $2
+		GROUP BY 
+			rm.id, rm.name
+	`
+
+	rows, err := r.DB.QueryContext(ctx, query, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Memproses hasil query
+	for rows.Next() {
+		var roomOmzet entity.RoomOmzetDetails
+		err := rows.Scan(&roomOmzet.RoomID, &roomOmzet.RoomName, &roomOmzet.RoomOmzet)
+		if err != nil {
+			return nil, err
+		}
+		roomOmzetDetails = append(roomOmzetDetails, roomOmzet)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return roomOmzetDetails, nil
 }

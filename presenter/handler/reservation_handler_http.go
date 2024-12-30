@@ -359,3 +359,48 @@ func (h *reservationHandler) GetSchedules(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, response.SuccessResponseWithCount("success get schedules", schedules, len(schedules)))
 }
+
+// GetDashboardData
+// @Summary Get dashboard data
+// @Description Mendapatkan data dashboard
+// @Tags Reservation
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param start_date query string false "Start date"
+// @Param end_date query string false "End date"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /dashboard [get]
+func (h *reservationHandler) GetDashboardData(c echo.Context) error {
+	startDateStr := c.QueryParam("start_date")
+	endDateStr := c.QueryParam("end_date")
+
+	if startDateStr == "" {
+		startDateStr = time.Now().AddDate(0, 0, -30).Format("2006-01-02") // 30 hari yang lalu
+	}
+	if endDateStr == "" {
+		endDateStr = time.Now().Format("2006-01-02") // Hari ini
+	}
+
+	startDate, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid start_date format"))
+	}
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid end_date format"))
+	}
+
+	if startDate.After(endDate) {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("start_date must be before end_date"))
+	}
+
+	dashboardData, err := h.useCase.GetDashboardData(c.Request().Context(), startDate, endDate)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse(err.Error(), http.StatusInternalServerError))
+	}
+
+	return c.JSON(http.StatusOK, response.SuccessResponse("success get dashboard data", dashboardData))
+}
