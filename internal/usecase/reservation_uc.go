@@ -6,6 +6,7 @@ import (
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/presenter/model"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -35,7 +36,7 @@ func (u *reservationUseCase) PayReservation(ctx context.Context, id int, userId 
 	}
 
 	if reservation.UserID != userId && !isAdmin {
-		return errors.New("unauthorized")
+		return errors.New("invalid access")
 	}
 
 	// validasi status pembayaran
@@ -86,7 +87,7 @@ func (u *reservationUseCase) CancelReservation(ctx context.Context, id int, user
 	return u.repo.UpdateStatus(ctx, id, "cancelled")
 }
 
-func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int) (*entity.Reservation, error) {
+func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int) (*[]model.ReservationDetailsResponse, error) {
 	if u.inquiryRepo == nil {
 		return nil, errors.New("inquiry repository is not initialized")
 	}
@@ -136,9 +137,14 @@ func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int
 	if err != nil {
 		return nil, err
 	}
-	return reservation, nil
+	reservationDetails, err := u.repo.GetReservationDetails(ctx, reservation.ID)
+	fmt.Println("reservationDetails:", reservationDetails)
+	if err != nil {
+		return nil, err
+	}
+	return reservationDetails, nil
 }
-func (u *reservationUseCase) GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error) {
+func (u *reservationUseCase) GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error) {
 	reservations, err := u.repo.GetAll(ctx, startDate, endDate, roomType, status, userID)
 	if err != nil {
 		return nil, err

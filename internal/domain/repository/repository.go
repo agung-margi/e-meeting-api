@@ -13,6 +13,7 @@ type UserRepository interface {
 	SaveUser(ctx context.Context, user *entity.User) error
 	UpdateUser(ctx context.Context, id int, user *entity.User) error
 	CheckEmailExists(ctx context.Context, email string) (bool, error)
+	CheckUsernameExists(ctx context.Context, username string) (bool, error)
 }
 
 type SnackRepository interface {
@@ -29,7 +30,7 @@ type RoomtypeRepository interface {
 
 type RoomRepository interface {
 	GetAll(ctx context.Context, name string, roomType int, capacity int) ([]entity.Room, error)
-	GetByID(ctx context.Context, id int) (*entity.RoomWithType, error)
+	GetByID(ctx context.Context, id int) (*entity.Room, error)
 	SaveRoom(ctx context.Context, room *entity.Room) error
 	UpdateRoom(ctx context.Context, id int, room *entity.Room) error
 	DeleteRoom(ctx context.Context, id int) error
@@ -43,7 +44,7 @@ type ReservationRepository interface {
 	GetRoomPriceByID(ctx context.Context, roomID int) (int, error)
 	GetSnackPriceByID(ctx context.Context, snackID int) (int, error)
 	GetReservationDetails(ctx context.Context, reservationID int) (*[]model.ReservationDetailsResponse, error)
-	GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error)
+	GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error)
 	UpdateStatus(ctx context.Context, id int, status string) error
 	GetReservationsCountByRoomAndDate(ctx context.Context, roomID int, date string) (int, error)
 	GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error)

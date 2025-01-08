@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"e-meeting-api/configs"
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
@@ -107,7 +108,7 @@ func (h *roomHandler) SaveRoom(c echo.Context) error {
 	room := &model.RoomRequest{}
 
 	room.Name = c.FormValue("name")
-	room.RoomType, _ = strconv.Atoi(c.FormValue("room_type_id"))
+	room.RoomTypeId, _ = strconv.Atoi(c.FormValue("room_type_id"))
 	room.Price, _ = strconv.Atoi(c.FormValue("price"))
 	room.Capacity, _ = strconv.Atoi(c.FormValue("capacity"))
 
@@ -144,7 +145,7 @@ func (h *roomHandler) SaveRoom(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to upload image"))
 	}
 
-	baseURL := os.Getenv("BASE_URL")
+	baseURL := configs.AppConfig.BaseURL
 	imgUrl := baseURL + "/photos/" + randomFileName
 	room.ImgUrl = imgUrl
 
@@ -185,11 +186,14 @@ func (h *roomHandler) GetRoom(c echo.Context) error {
 // @Summary Update room by id
 // @Description Mengupdate room berdasarkan id
 // @Tags Room
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Security ApiKeyAuth
 // @Param id path int true "Room ID"
-// @Param room body model.RoomRequest true "Room Request"
+// @Param name formData string false "Room Name"
+// @Param room_type_id formData int false "Room Type ID"
+// @Param price formData int false "Price"
+// @Param capacity formData int false "Capacity"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 404 {object} response.APIResponse
@@ -211,7 +215,16 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 	room := &model.RoomRequest{}
 
 	room.Name = c.FormValue("name")
-	room.RoomType, _ = strconv.Atoi(c.FormValue("room_type_id"))
+	roomTypeStr := c.FormValue("room_type_id")
+	fmt.Println("roomTypeStr: ", roomTypeStr)
+	if roomTypeStr == "" {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("room_type_id is required"))
+	}
+	room.RoomTypeId, err = strconv.Atoi(roomTypeStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid room_type_id"))
+	}
+
 	room.Price, _ = strconv.Atoi(c.FormValue("price"))
 	room.Capacity, _ = strconv.Atoi(c.FormValue("capacity"))
 
@@ -248,7 +261,7 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 			}
 		}
 
-		baseURL := os.Getenv("BASE_URL")
+		baseURL := configs.AppConfig.BaseURL
 		imgUrl := baseURL + "/photos/" + randomFileName
 		room.ImgUrl = imgUrl
 	} else {

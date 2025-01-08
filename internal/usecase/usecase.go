@@ -16,9 +16,9 @@ type UserUseCase interface {
 
 type ReservationUseCase interface {
 	GetReservation(ctx context.Context, reservationID int) (*[]model.ReservationDetailsResponse, error)
-	Save(ctx context.Context, inquiryId int, userId int) (*entity.Reservation, error)
+	Save(ctx context.Context, inquiryId int, userId int) (*[]model.ReservationDetailsResponse, error)
 	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]entity.RoomSchedule, error)
-	GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error)
+	GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error)
 	PayReservation(ctx context.Context, id int, userId int, isAdmin bool) error
 	CancelReservation(ctx context.Context, id int, userId int, isAdmin bool) error
 	GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error)
@@ -38,7 +38,7 @@ type RoomtypeUseCase interface {
 
 type RoomUseCase interface {
 	GetAll(ctx context.Context, name string, roomType int, capacity int) ([]entity.Room, error)
-	GetByID(ctx context.Context, id int) (*entity.RoomWithType, error)
+	GetByID(ctx context.Context, id int) (*entity.Room, error)
 	SaveRoom(ctx context.Context, room *model.RoomRequest) error
 	UpdateRoom(ctx context.Context, id int, room *model.RoomRequest) error
 	DeleteRoom(ctx context.Context, id int) error

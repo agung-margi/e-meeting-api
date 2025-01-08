@@ -24,7 +24,7 @@ func (u *roomUseCase) GetAll(ctx context.Context, name string, roomType int, cap
 	return rooms, nil
 }
 
-func (u *roomUseCase) GetByID(ctx context.Context, id int) (*entity.RoomWithType, error) {
+func (u *roomUseCase) GetByID(ctx context.Context, id int) (*entity.Room, error) {
 	return u.repo.GetByID(ctx, id)
 }
 
@@ -32,11 +32,11 @@ func (u *roomUseCase) SaveRoom(ctx context.Context, roomRequest *model.RoomReque
 
 	// Creating the Room entity from RoomRequest.
 	room := &entity.Room{
-		Name:     roomRequest.Name,
-		RoomType: roomRequest.RoomType,
-		Price:    roomRequest.Price,
-		Capacity: roomRequest.Capacity,
-		ImgUrl:   roomRequest.ImgUrl,
+		Name:       roomRequest.Name,
+		RoomTypeId: roomRequest.RoomTypeId,
+		Price:      roomRequest.Price,
+		Capacity:   roomRequest.Capacity,
+		ImgUrl:     roomRequest.ImgUrl,
 	}
 
 	err := u.repo.SaveRoom(ctx, room)
@@ -53,12 +53,12 @@ func (u *roomUseCase) SaveRoom(ctx context.Context, roomRequest *model.RoomReque
 func (u *roomUseCase) UpdateRoom(ctx context.Context, id int, roomRequest *model.RoomRequest) error {
 
 	room := &entity.Room{
-		ID:       id,
-		Name:     roomRequest.Name,
-		RoomType: roomRequest.RoomType,
-		Price:    roomRequest.Price,
-		Capacity: roomRequest.Capacity,
-		ImgUrl:   roomRequest.ImgUrl,
+		ID:         id,
+		Name:       roomRequest.Name,
+		RoomTypeId: roomRequest.RoomTypeId,
+		Price:      roomRequest.Price,
+		Capacity:   roomRequest.Capacity,
+		ImgUrl:     roomRequest.ImgUrl,
 	}
 
 	err := u.repo.UpdateRoom(ctx, id, room)

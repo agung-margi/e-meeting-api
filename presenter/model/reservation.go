@@ -3,7 +3,6 @@ package model
 import "time"
 
 type ReservationRequest struct {
-	UserID       int    `json:"userId" example:"1"`
 	RoomID       int    `json:"roomId" example:"2"`
 	BookingDate  string `json:"bookingDate" example:"2025-02-01"`
 	StartTime    string `json:"startTime" example:"08:00"`

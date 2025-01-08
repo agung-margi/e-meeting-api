@@ -9,7 +9,7 @@ type UserHandler interface {
 	SaveUser(c echo.Context) error
 	UpdateUser(c echo.Context) error
 	Login(c echo.Context) error
-	Logout(c echo.Context) error
+	// Logout(c echo.Context) error
 }
 
 type ReservationHandler interface {

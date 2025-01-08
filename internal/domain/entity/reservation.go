@@ -65,6 +65,14 @@ type RoomOmzetDetails struct {
 	RoomID           int     `json:"roomId"`
 	RoomName         string  `json:"roomName"`
 	TotalReservation int     `json:"totalReservation"`
-	RoomOmzet       int     `json:"roomOmzet"`
+	RoomOmzet        int     `json:"roomOmzet"`
 	Presentage       float64 `json:"presentage"`
+}
+
+type ReservationHistory struct {
+	ID          int    `json:"id"`
+	BookingDate string `json:"bookingDate"`
+	RoomName    string `json:"roomName"`
+	RoomType    string `json:"roomType"`
+	Status      string `json:"status"`
 }

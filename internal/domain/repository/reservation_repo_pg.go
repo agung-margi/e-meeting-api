@@ -41,17 +41,18 @@ func (r *reservationRepo) CheckAvailability(ctx context.Context, roomId int, sta
         FROM reservations
         WHERE room_id = $1
           AND (start_time < $3 AND end_time > $2)
+					AND status = 'booked'
         LIMIT 1
     `
 	var exists int
 	err := r.DB.QueryRowContext(ctx, query, roomId, startTime, endTime).Scan(&exists)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
+			return true, nil
 		}
 		return false, err
 	}
-	return true, err
+	return false, err
 }
 func (r *reservationRepo) GetReservationsByRoomAndDate(ctx context.Context, roomID int, date string) ([]entity.RoomSchedule, error) {
 	query := `
@@ -134,10 +135,12 @@ func (r *reservationRepo) Save(ctx context.Context, reservation *entity.Reservat
 		details.SnackID,
 		details.Participants,
 		details.Notes)
+
 	if err := detail.Scan(&details.ID); err != nil {
 		return nil, err
 	}
 
+	// Return reservation dengan data lengkap
 	return reservation, nil
 }
 
@@ -178,22 +181,14 @@ func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entit
 	return reservations, nil
 }
 
-func (r *reservationRepo) GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.Reservation, error) {
+func (r *reservationRepo) GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error) {
 	query := `
 		SELECT
-    r.id,
-    r.user_id,
-    r.room_id,
-    r.start_time,
-    r.end_time,
-    r.booking_date,
-    r.room_price,
-    r.snack_price,
-    r.total_price,
-    r.status,
-    rt.name AS room_type,
-    r.created_at,
-    r.updated_at
+		r.id,
+		r.booking_date,
+		rm.name AS room_name,
+		rt.name AS room_type,
+		r.status
 FROM
     reservations r
 JOIN
@@ -221,23 +216,15 @@ WHERE
 	defer rows.Close()
 
 	// Parsing hasil query ke dalam slice of Reservation
-	var reservations []*entity.Reservation
+	var reservations []*entity.ReservationHistory
 	for rows.Next() {
-		var reservation entity.Reservation
+		var reservation entity.ReservationHistory
 		if err := rows.Scan(
 			&reservation.ID,
-			&reservation.UserID,
-			&reservation.RoomID,
-			&reservation.StartTime,
-			&reservation.EndTime,
 			&reservation.BookingDate,
-			&reservation.RoomPrice,
-			&reservation.SnackPrice,
-			&reservation.TotalPrice,
-			&reservation.Status,
+			&reservation.RoomName,
 			&reservation.RoomType,
-			&reservation.CreatedAt,
-			&reservation.UpdatedAt,
+			&reservation.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -246,12 +233,6 @@ WHERE
 
 	return reservations, nil
 }
-
-// func (r *reservationRepo) GetRoomSchedule(ctx context.Context, roomID int, date string) error {
-// 	query := " "
-// 	_, err := r.DB.ExecContext(ctx, query, roomID, date)
-// 	return err
-// }
 
 func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservationID int) (*[]model.ReservationDetailsResponse, error) {
 	query := `
@@ -381,7 +362,7 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 }
 
 func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationID int, status string) error {
-	query := "UPDATE reservations SET status = $1 WHERE id = $2"
+	query := "UPDATE reservations SET status = $1 ,updated_at = now() WHERE id = $2"
 	_, err := r.DB.ExecContext(ctx, query, status, reservationID)
 	return err
 }

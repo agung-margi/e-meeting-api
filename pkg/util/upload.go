@@ -1,11 +1,13 @@
 package util
 
 import (
+	"e-meeting-api/presenter/model"
 	"errors"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
+	"reflect"
 )
 
 func SaveUploadedFile(file *multipart.FileHeader, path string) error {
@@ -53,4 +55,10 @@ func ValidateImageFile(file multipart.File) (bool, error) {
 
 	// Jika tipe file tidak valid
 	return false, errors.New("only image files are allowed")
+}
+
+func IsFieldProvided(user *model.UpdateUserRequest, fieldName string) bool {
+	v := reflect.ValueOf(user).Elem()
+	field := v.FieldByName(fieldName)
+	return field.IsValid() && !field.IsZero()
 }

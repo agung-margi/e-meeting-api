@@ -12,6 +12,7 @@ import (
 // @Name Authorization
 
 func main() {
+
 	e := echo.New()
 	if err := handler.RoutingRestAPI(e); err != nil {
 		e.Logger.Fatal(err)

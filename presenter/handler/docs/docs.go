@@ -30,7 +30,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Reservation"
+                    "Dashboard"
                 ],
                 "summary": "Get dashboard data",
                 "parameters": [
@@ -71,7 +71,7 @@ const docTemplate = `{
         },
         "/login": {
             "post": {
-                "description": "Melakukan login user",
+                "description": "Melakukan login user berdasarkan username dan password misalnya \"username\": \"user1\", \"password\": \"password\"",
                 "consumes": [
                     "application/json"
                 ],
@@ -108,29 +108,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/logout": {
-            "post": {
-                "description": "Melakukan logout user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Authentication"
-                ],
-                "summary": "Logout user",
-                "responses": {
-                    "200": {
-                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.APIResponse"
                         }
@@ -248,53 +225,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Menyimpan reservation",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Reservation"
-                ],
-                "summary": "Save reservation",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Inquiry ID",
-                        "name": "inquiry_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.APIResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/response.APIResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/response.APIResponse"
-                        }
-                    }
-                }
             }
         },
         "/reservations/inquiry": {
@@ -370,16 +300,14 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Start date",
-                        "name": "startDate",
-                        "in": "query",
-                        "required": true
+                        "name": "start_date",
+                        "in": "query"
                     },
                     {
                         "type": "string",
                         "description": "End date",
-                        "name": "endDate",
-                        "in": "query",
-                        "required": true
+                        "name": "end_date",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -525,6 +453,55 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Reservation ID",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/reservations/{inquiry_id}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Menyimpan reservation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reservation"
+                ],
+                "summary": "Save reservation",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Inquiry ID",
+                        "name": "inquiry_id",
                         "in": "path",
                         "required": true
                     }
@@ -804,7 +781,7 @@ const docTemplate = `{
                 ],
                 "description": "Mengupdate room berdasarkan id",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -822,13 +799,28 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Room Request",
-                        "name": "room",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RoomRequest"
-                        }
+                        "type": "string",
+                        "description": "Room Name",
+                        "name": "name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Room Type ID",
+                        "name": "room_type_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Price",
+                        "name": "price",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Capacity",
+                        "name": "capacity",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -1084,15 +1076,21 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "IsAdmin",
                         "name": "isAdmin",
                         "in": "formData"
                     },
                     {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "IsActive",
                         "name": "isActive",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language",
+                        "name": "language",
                         "in": "formData"
                     },
                     {
@@ -1193,48 +1191,6 @@ const docTemplate = `{
                 "startTime": {
                     "type": "string",
                     "example": "08:00"
-                },
-                "userId": {
-                    "type": "integer",
-                    "example": 1
-                }
-            }
-        },
-        "model.RoomRequest": {
-            "type": "object",
-            "required": [
-                "capacity",
-                "name",
-                "price",
-                "room_type"
-            ],
-            "properties": {
-                "capacity": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 20
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "imgUrl": {
-                    "type": "string",
-                    "example": "https://example.com/image.jpg"
-                },
-                "name": {
-                    "type": "string",
-                    "minLength": 2,
-                    "example": "Aster Room"
-                },
-                "price": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 10000
-                },
-                "room_type": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 1
                 }
             }
         },

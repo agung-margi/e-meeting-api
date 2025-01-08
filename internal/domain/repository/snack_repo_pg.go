@@ -20,7 +20,7 @@ func (r *snackRepo) GetByID(ctx context.Context, id int) (*entity.Snack, error) 
 	snack := &entity.Snack{}
 	err := r.DB.QueryRowContext(ctx, query, id).Scan(&snack.ID, &snack.Name, &snack.Category, &snack.Price)
 	if err != nil {
-		fmt.Println("Error fetching snack:", err) // Log the error
+		fmt.Println("Error fetching snack:", err)
 		return nil, fmt.Errorf("failed to get snack: %w", err)
 	}
 	return snack, nil

@@ -120,3 +120,20 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*entity.
 
 	return user, nil
 }
+
+func (r *userRepo) CheckUsernameExists(ctx context.Context, username string) (bool, error) {
+
+	var user entity.User
+	query := "SELECT id FROM users WHERE username = $1"
+
+	err := r.DB.QueryRowContext(ctx, query, username).Scan(&user.ID)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}

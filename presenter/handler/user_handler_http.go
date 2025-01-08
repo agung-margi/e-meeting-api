@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"e-meeting-api/configs"
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
@@ -108,8 +109,13 @@ func (h *userHandler) SaveUser(c echo.Context) error {
 		if err.Error() == "email already exists" {
 			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("email already exists"))
 		}
+
+		if err.Error() == "username already exists" {
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("username already exists"))
+		}
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse("internal server error", http.StatusInternalServerError))
 	}
+
 	return c.JSON(http.StatusOK, response.SuccessResponse("register succesfully", user))
 }
 
@@ -124,8 +130,9 @@ func (h *userHandler) SaveUser(c echo.Context) error {
 // @Param username formData string false "Username"
 // @Param email formData string false "Email"
 // @Param password formData string false "Password"
-// @Param isAdmin formData string false "IsAdmin"
-// @Param isActive formData string false "IsActive"
+// @Param isAdmin formData bool false "IsAdmin"
+// @Param isActive formData bool false "IsActive"
+// @Param language formData string false "Language"
 // @Param image formData file false "User Image"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
@@ -152,35 +159,26 @@ func (h *userHandler) UpdateUser(c echo.Context) error {
 	if tokenUserIDInt != id {
 		return c.JSON(http.StatusForbidden, response.ForbiddenResponse("invalid access"))
 	}
+
+	// Ambil user lama dari database
 	oldUser, err := h.useCase.GetUser(context.Background(), id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, response.NotFoundResponse("user not found"))
 	}
 
-	user := &model.UpdateUserRequest{}
+	// Ambil parameter dari form data
+	username := c.FormValue("username")
+	email := c.FormValue("email")
+	password := c.FormValue("password")
+	isAdmin, _ := strconv.ParseBool(c.FormValue("isAdmin"))
+	isActive, _ := strconv.ParseBool(c.FormValue("isActive"))
+	language := c.FormValue("language")
 
-	user.Username = c.FormValue("username")
-	user.Email = c.FormValue("email")
-	user.Password = c.FormValue("password")
-	user.ImgUrl = c.FormValue("imgUrl")
-
-	if err := c.Bind(user); err != nil {
-		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request data"))
-	}
-	if err := user.Validate(); err != nil {
-		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid data: "+err.Error()))
-	}
-
-	hashedPassword, err := util.HashPassword(user.Password)
-	if err != nil {
-		return err
-	}
-
-	user.Password = hashedPassword
-
+	// Periksa apakah ada file gambar baru
+	var imgUrl string
 	file, err := c.FormFile("image")
 	if err == nil {
-
+		// Proses file gambar jika ada
 		src, err := file.Open()
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("failed to open file"))
@@ -193,8 +191,7 @@ func (h *userHandler) UpdateUser(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, response.BadRequestResponse(err.Error()))
 		}
 
-		src.Seek(0, 0)
-		// Jika file ada, proses upload
+		// Proses upload file
 		ext := filepath.Ext(file.Filename)
 		randomFileName := util.GenerateRandomString(25) + ext
 		uploadPath := "public/photos/" + randomFileName
@@ -204,41 +201,49 @@ func (h *userHandler) UpdateUser(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to upload image"))
 		}
 
+		baseURL := configs.AppConfig.BaseURL
+		imgUrl = baseURL + "/photos/" + randomFileName
+
+		// Hapus gambar lama jika ada
 		if oldUser.ImgUrl != "" {
 			oldFilePath := strings.Replace(oldUser.ImgUrl, os.Getenv("BASE_URL")+"/photos/", "public/photos/", 1)
 			if err := os.Remove(oldFilePath); err != nil {
 				fmt.Println("Failed to delete old file:", err)
 			}
 		}
-
-		baseURL := os.Getenv("BASE_URL")
-		imgUrl := baseURL + "/photos/" + randomFileName
-		user.ImgUrl = imgUrl
 	} else {
-		// Jika tidak ada file, gunakan gambar lama dari database
-		existingUser, err := h.useCase.GetUser(c.Request().Context(), id)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to retrieve existing room details"))
-		}
-		user.ImgUrl = existingUser.ImgUrl
+		// Jika tidak ada gambar baru, gunakan gambar lama
+		imgUrl = oldUser.ImgUrl
 	}
 
-	err = h.useCase.UpdateUser(context.Background(), id, user)
+	// Update user di usecase
+	updatedUser := &model.UpdateUserRequest{
+		Username: username,
+		Email:    email,
+		Password: password,
+		IsAdmin:  isAdmin,
+		IsActive: isActive,
+		Language: language,
+		ImgUrl:   imgUrl,
+	}
+
+	err = h.useCase.UpdateUser(context.Background(), id, updatedUser)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse(err.Error(), http.StatusInternalServerError))
 	}
 
-	updatedUser, err := h.useCase.GetUser(context.Background(), id)
+	// Ambil data user yang sudah diperbarui
+	updatedUserResponse, err := h.useCase.GetUser(context.Background(), id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse("error fetching user", http.StatusInternalServerError))
 	}
 
-	return c.JSON(http.StatusOK, response.SuccessResponse("success update user", updatedUser))
+	return c.JSON(http.StatusOK, response.SuccessResponse("success update user", updatedUserResponse))
 }
 
 // Login
 // @Summary Login user
-// @Description Melakukan login user
+// @Description Melakukan login user berdasarkan username dan password misalnya "username": "user1", "password": "password"
 // @Tags Authentication
 // @Accept json
 // @Produce json
@@ -261,16 +266,4 @@ func (h *userHandler) Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.SuccessResponse("success login", map[string]interface{}{
 		"token": token,
 	}))
-}
-
-// Logout
-// @Summary Logout user
-// @Description Melakukan logout user
-// @Tags Authentication
-// @Accept json
-// @Produce json
-// @Success 200 {object} response.APIResponse
-// @Router /logout [post]
-func (h *userHandler) Logout(c echo.Context) error {
-	return c.JSON(http.StatusOK, response.SuccessResponse("success logout", nil))
 }

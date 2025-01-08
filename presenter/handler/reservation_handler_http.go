@@ -32,7 +32,7 @@ func NewReservationHandler(useCase usecase.ReservationUseCase) ReservationHandle
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 500 {object} response.APIResponse
-// @Router /reservations [post]
+// @Router /reservations/{inquiry_id} [post]
 func (h *reservationHandler) SaveReservation(c echo.Context) error {
 	// Mendapatkan userId dari context (middleware)
 	userId := c.Get("user_id").(float64)
@@ -184,7 +184,7 @@ func (h *reservationHandler) PayReservation(c echo.Context) error {
 		case "reservation that has already been cancelled":
 			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("cannot pay for a reservation that has already been cancelled"))
 		default:
-			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to process payment"))
+			return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse(err.Error()))
 		}
 	}
 
@@ -200,7 +200,7 @@ func (h *reservationHandler) PayReservation(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Param start_date query string false "Start date"
 // @Param end_date query string false "End date"
-// @Param room_type query string false "Room type"
+// @Param room_type query int false "Room type"
 // @Param status query string false "Status"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
@@ -268,6 +268,10 @@ func (h *reservationHandler) GetReservations(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse(err.Error(), http.StatusInternalServerError))
 	}
+	if reservations == nil {
+		return c.JSON(http.StatusNotFound, response.NotFoundResponse("reservations not found"))
+	}
+
 	return c.JSON(http.StatusOK, response.SuccessResponse("success get reservations", reservations))
 }
 
@@ -315,16 +319,16 @@ func (h *reservationHandler) GetRoomSchedule(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
-// @Param startDate query string true "Start date"
-// @Param endDate query string true "End date"
+// @Param start_date query string false "Start date"
+// @Param end_date query string false "End date"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 500 {object} response.APIResponse
 // @Router /reservations/schedules [get]
 func (h *reservationHandler) GetSchedules(c echo.Context) error {
 
-	startDateStr := c.QueryParam("startDate")
-	endDateStr := c.QueryParam("endDate")
+	startDateStr := c.QueryParam("start_date")
+	endDateStr := c.QueryParam("end_date")
 	fmt.Println(startDateStr, endDateStr)
 
 	startDate, err := time.Parse("2006-01-02", startDateStr)
@@ -363,7 +367,7 @@ func (h *reservationHandler) GetSchedules(c echo.Context) error {
 // GetDashboardData
 // @Summary Get dashboard data
 // @Description Mendapatkan data dashboard
-// @Tags Reservation
+// @Tags Dashboard
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth

@@ -87,8 +87,8 @@ func (r *roomTypeRepo) GetByName(ctx context.Context, name string) (*entity.Room
 }
 
 func (r *roomTypeRepo) SaveRoomType(ctx context.Context, roomType *entity.RoomtypeRepository) error {
-	query := "INSERT INTO room_types (name, created_at, updated_at) VALUES ($1, $2, $3) RETURNING id"
-	row := r.DB.QueryRowContext(ctx, query, roomType.Name, roomType.CreatedAt, roomType.UpdatedAt)
+	query := "INSERT INTO room_types (name, created_at, updated_at) VALUES ($1, now(), now()) RETURNING id"
+	row := r.DB.QueryRowContext(ctx, query, roomType.Name)
 	if err := row.Scan(&roomType.ID); err != nil {
 		return err
 	}

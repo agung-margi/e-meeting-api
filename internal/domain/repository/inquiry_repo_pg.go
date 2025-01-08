@@ -41,11 +41,9 @@ func (r *inquiryRepo) Save(ctx context.Context, inquiry *entity.Inquiry) (*entit
 		inquiry.TotalRoomPrice, inquiry.TotalSnackPrice, inquiry.TotalPrice, inquiry.Notes, inquiry.CreatedAt, inquiry.UpdatedAt).Scan(&id)
 
 	if err != nil {
-		fmt.Println("Error while saving inquiry:", err)
 		return nil, err
 	}
 	inquiry.ID = id
-	fmt.Println("inquiry saved with ID:", inquiry.ID)
 	return inquiry, nil
 }
 

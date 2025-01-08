@@ -6,7 +6,7 @@ import (
 	"e-meeting-api/internal/domain/repository"
 	"errors"
 	"fmt"
-	"strings"
+	"math"
 	"time"
 )
 
@@ -22,43 +22,51 @@ func NewInquiryUseCase(inquiryRepo repository.InquiryRepository, roomRepo reposi
 }
 
 func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservation) (*entity.Inquiry, error) {
-	//get room details
+
+	fmt.Println("=== Start Save Function ===")
+	fmt.Println("Reservation Details:", reservation)
+	fmt.Println("Room ID:", reservation.RoomID, "Booking Date:", reservation.BookingDate,
+		"Start Time:", reservation.StartTime, "End Time:", reservation.EndTime)
+
+	// Get room details
 	room, err := u.roomRepo.GetByID(ctx, reservation.RoomID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get room details: %w", err)
 	}
 
-	//get snack details
+	// Get snack details (if any)
 	var snack *entity.Snack
 	if reservation.SnackID != nil {
 		fmt.Println("Fetching snack with ID:", *reservation.SnackID)
 		snack, err = u.snackRepo.GetByID(ctx, *reservation.SnackID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get snack details: %w", err)
 		}
 		fmt.Println("Fetched snack:", snack)
 	}
+
+	// Parse start and end time
 	date := reservation.BookingDate
 	start := reservation.StartTime
 	end := reservation.EndTime
-	format := "2006-01-02 15:00"
+	format := "2006-01-02 15:04"
 
 	startStr := fmt.Sprintf("%s %s", date, start)
 	endStr := fmt.Sprintf("%s %s", date, end)
 
 	startTime, err := time.Parse(format, startStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid start time format: %w", err)
 	}
 
-	// Parse end time
 	endTime, err := time.Parse(format, endStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid end time format: %w", err)
 	}
 
+	// Validation checks
 	if startTime.After(endTime) {
-		return nil, errors.New("i start time should be before end time")
+		return nil, errors.New("start time should be before end time")
 	}
 
 	if startTime.Before(time.Now()) {
@@ -67,31 +75,39 @@ func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservati
 
 	if reservation.Participants < 1 {
 		return nil, errors.New("participants should be at least 1")
-
 	}
+
 	if reservation.Participants > room.Capacity {
-		return nil, errors.New("room capacity is not enough")
+		return nil, fmt.Errorf("room capacity exceeded: maximum %d participants allowed", room.Capacity)
 	}
 
-	// Cek ketersediaan ruangan
+	// Check room availability
 	available, err := u.reservationRepo.CheckAvailability(ctx, reservation.RoomID, startStr, endStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to check room availability: %w", err)
 	}
 
-	// Jika ruangan tidak tersedia, return error
 	if !available {
 		return nil, errors.New("room is not available for the selected time")
 	}
 
-	// Calculate duration
-	duration := int(endTime.Sub(startTime).Hours())
-
+	// Calculate room price
+	duration := int(math.Ceil(endTime.Sub(startTime).Hours()))
+	if duration < 1 {
+		duration = 1 // Minimum duration of 1 hour
+	}
 	roomTotalPrice := room.Price * duration
-	snackTotalPrice := 0
-	grandTotal := roomTotalPrice
 
-	//create inquiry
+	// Calculate snack price
+	snackTotalPrice := 0
+	if snack != nil {
+		snackTotalPrice = snack.Price * reservation.Participants
+	}
+
+	// Calculate grand total
+	grandTotal := roomTotalPrice + snackTotalPrice
+
+	// Create inquiry
 	inquiry := &entity.Inquiry{
 		UserID:          reservation.UserID,
 		RoomID:          reservation.RoomID,
@@ -115,28 +131,27 @@ func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservati
 		TotalSnackPrice: snackTotalPrice,
 		TotalPrice:      grandTotal,
 		Notes:           reservation.Notes,
-		CreatedAt:       strings.Split(time.Now().String(), ".")[0],
-		UpdatedAt:       strings.Split(time.Now().String(), ".")[0],
+		CreatedAt:       time.Now().Format("2006-01-02 15:04:05"),
+		UpdatedAt:       time.Now().Format("2006-01-02 15:04:05"),
 	}
-
-	fmt.Println(inquiry)
-	// If snack details were found, update the Inquiry struct
+	// Update inquiry with snack details if available
 	if snack != nil {
 		inquiry.SnackPrice = snack.Price
 		inquiry.SnackID = reservation.SnackID
 		inquiry.SnackName = snack.Name
 		inquiry.SnackCategory = snack.Category
-		inquiry.SnackPrice = snack.Price
-		inquiry.TotalSnackPrice = snack.Price * reservation.Participants
-		inquiry.TotalPrice = roomTotalPrice + snackTotalPrice
+		inquiry.TotalSnackPrice = snackTotalPrice
+		inquiry.TotalPrice = grandTotal
 	}
+
+	// Save inquiry
 	inquiry, err = u.inquiryRepo.Save(ctx, inquiry)
 	if err != nil {
 		fmt.Println("Error saving inquiry:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to save inquiry: %w", err)
 	}
 
-	inquiry.ID = inquiry.ID
+	fmt.Println("Inquiry saved successfully:", inquiry)
 	return inquiry, nil
 }
 

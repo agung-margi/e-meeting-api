@@ -28,11 +28,18 @@ func (u *userUseCase) GetUser(ctx context.Context, id int) (*entity.User, error)
 
 func (u *userUseCase) SaveUser(ctx context.Context, user *model.UserRequest) error {
 
+	userExists, err := u.repo.CheckUsernameExists(ctx, user.Username)
+	if err != nil {
+		return err
+	}
+	if userExists {
+		return errors.New("username already exists")
+	}
+
 	emailExists, err := u.repo.CheckEmailExists(ctx, user.Email)
 	if err != nil {
 		return err
 	}
-
 	if emailExists {
 		return errors.New("email already exists")
 	}
@@ -46,6 +53,7 @@ func (u *userUseCase) SaveUser(ctx context.Context, user *model.UserRequest) err
 }
 
 func (u *userUseCase) UpdateUser(ctx context.Context, id int, user *model.UpdateUserRequest) error {
+	// Ambil data user lama dari database
 	existingUser, err := u.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -54,6 +62,7 @@ func (u *userUseCase) UpdateUser(ctx context.Context, id int, user *model.Update
 		return errors.New("user not found")
 	}
 
+	// Periksa properti dari request dan gunakan data lama jika properti kosong
 	updatedUser := &entity.User{
 		Username: user.Username,
 		Email:    user.Email,
@@ -63,6 +72,32 @@ func (u *userUseCase) UpdateUser(ctx context.Context, id int, user *model.Update
 		IsActive: user.IsActive,
 		Language: user.Language,
 	}
+
+	if updatedUser.Username == "" {
+		updatedUser.Username = existingUser.Username
+	}
+	if updatedUser.Email == "" {
+		updatedUser.Email = existingUser.Email
+	}
+	if updatedUser.Password == "" {
+		updatedUser.Password = existingUser.Password
+	}
+	if updatedUser.ImgUrl == "" {
+		updatedUser.ImgUrl = existingUser.ImgUrl
+	}
+	if updatedUser.Language == "" {
+		updatedUser.Language = existingUser.Language
+	}
+	// Jika IsActive tidak di-set dalam request, gunakan nilai lama
+	if user.IsActive == false && !util.IsFieldProvided(user, "IsActive") {
+		updatedUser.IsActive = existingUser.IsActive
+	}
+	// Jika IsAdmin tidak di-set dalam request, gunakan nilai lama
+	if user.IsAdmin == false && !util.IsFieldProvided(user, "IsAdmin") {
+		updatedUser.IsAdmin = existingUser.IsAdmin
+	}
+
+	// Kirim data yang sudah diperbarui ke repository
 	return u.repo.UpdateUser(ctx, id, updatedUser)
 }
 

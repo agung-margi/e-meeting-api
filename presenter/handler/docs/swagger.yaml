@@ -45,38 +45,6 @@ definitions:
       startTime:
         example: "08:00"
         type: string
-      userId:
-        example: 1
-        type: integer
-    type: object
-  model.RoomRequest:
-    properties:
-      capacity:
-        example: 20
-        minimum: 1
-        type: integer
-      id:
-        type: integer
-      imgUrl:
-        example: https://example.com/image.jpg
-        type: string
-      name:
-        example: Aster Room
-        minLength: 2
-        type: string
-      price:
-        example: 10000
-        minimum: 1
-        type: integer
-      room_type:
-        example: 1
-        minimum: 1
-        type: integer
-    required:
-    - capacity
-    - name
-    - price
-    - room_type
     type: object
   model.UserRequest:
     properties:
@@ -140,12 +108,13 @@ paths:
       - ApiKeyAuth: []
       summary: Get dashboard data
       tags:
-      - Reservation
+      - Dashboard
   /login:
     post:
       consumes:
       - application/json
-      description: Melakukan login user
+      description: 'Melakukan login user berdasarkan username dan password misalnya
+        "username": "user1", "password": "password"'
       parameters:
       - description: Login Request
         in: body
@@ -169,21 +138,6 @@ paths:
           schema:
             $ref: '#/definitions/response.APIResponse'
       summary: Login user
-      tags:
-      - Authentication
-  /logout:
-    post:
-      consumes:
-      - application/json
-      description: Melakukan logout user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-      summary: Logout user
       tags:
       - Authentication
   /register:
@@ -256,36 +210,6 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get all reservations
-      tags:
-      - Reservation
-    post:
-      consumes:
-      - application/json
-      description: Menyimpan reservation
-      parameters:
-      - description: Inquiry ID
-        in: path
-        name: inquiry_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Save reservation
       tags:
       - Reservation
   /reservations/{id}:
@@ -381,6 +305,37 @@ paths:
       summary: Pay reservation
       tags:
       - Reservation
+  /reservations/{inquiry_id}:
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan reservation
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: inquiry_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Save reservation
+      tags:
+      - Reservation
   /reservations/inquiry:
     post:
       consumes:
@@ -421,13 +376,11 @@ paths:
       parameters:
       - description: Start date
         in: query
-        name: startDate
-        required: true
+        name: start_date
         type: string
       - description: End date
         in: query
-        name: endDate
-        required: true
+        name: end_date
         type: string
       produces:
       - application/json
@@ -644,7 +597,7 @@ paths:
       - Room
     put:
       consumes:
-      - application/json
+      - multipart/form-data
       description: Mengupdate room berdasarkan id
       parameters:
       - description: Room ID
@@ -652,12 +605,22 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Room Request
-        in: body
-        name: room
-        required: true
-        schema:
-          $ref: '#/definitions/model.RoomRequest'
+      - description: Room Name
+        in: formData
+        name: name
+        type: string
+      - description: Room Type ID
+        in: formData
+        name: room_type_id
+        type: integer
+      - description: Price
+        in: formData
+        name: price
+        type: integer
+      - description: Capacity
+        in: formData
+        name: capacity
+        type: integer
       produces:
       - application/json
       responses:
@@ -788,10 +751,14 @@ paths:
       - description: IsAdmin
         in: formData
         name: isAdmin
-        type: string
+        type: boolean
       - description: IsActive
         in: formData
         name: isActive
+        type: boolean
+      - description: Language
+        in: formData
+        name: language
         type: string
       - description: User Image
         in: formData

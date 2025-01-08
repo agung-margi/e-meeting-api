@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -88,7 +87,7 @@ func (r *roomRepo) GetAll(ctx context.Context, name string, roomType int, capaci
 	return rooms, nil
 }
 
-func (r *roomRepo) GetByID(ctx context.Context, id int) (*entity.RoomWithType, error) {
+func (r *roomRepo) GetByID(ctx context.Context, id int) (*entity.Room, error) {
 	query := `
 		SELECT 
 			r.id, r.name, rt.name AS room_type, 
@@ -103,12 +102,12 @@ func (r *roomRepo) GetByID(ctx context.Context, id int) (*entity.RoomWithType, e
 	`
 	row := r.DB.QueryRowContext(ctx, query, id)
 
-	room := &entity.RoomWithType{}
+	room := &entity.Room{}
 
 	err := row.Scan(
 		&room.ID,
 		&room.Name,
-		&room.RoomType, // Room type name instead of ID
+		&room.RoomType,
 		&room.Price,
 		&room.Capacity,
 		&room.ImgUrl,
@@ -125,11 +124,10 @@ func (r *roomRepo) GetByID(ctx context.Context, id int) (*entity.RoomWithType, e
 }
 
 func (r *roomRepo) SaveRoom(ctx context.Context, room *entity.Room) error {
-	query := "INSERT INTO rooms (name, room_type_id, price, capacity, img_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
+	query := "INSERT INTO rooms (name, room_type_id, price, capacity, img_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5,now(),now()) RETURNING id"
 
-	row := r.DB.QueryRowContext(ctx, query, room.Name, room.RoomType, room.Price, room.Capacity, room.ImgUrl, room.CreatedAt, room.UpdatedAt)
-	fmt.Printf("room: %+v\n", room)
-	fmt.Println("row: ", row)
+	row := r.DB.QueryRowContext(ctx, query, room.Name, room.RoomType, room.Price, room.Capacity, room.ImgUrl)
+
 	if err := row.Scan(&room.ID); err != nil {
 		return err
 	}

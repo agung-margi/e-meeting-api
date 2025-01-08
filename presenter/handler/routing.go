@@ -1,34 +1,31 @@
 package handler
 
 import (
+	"e-meeting-api/configs"
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/pkg/database"
 	"e-meeting-api/pkg/middleware"
-	"os"
+	"fmt"
 
 	_ "e-meeting-api/presenter/handler/docs"
 
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 func RoutingRestAPI(e *echo.Echo) error {
 
-	// Inisialisasi database
-	err := godotenv.Load(".env")
-	if err != nil {
-		e.Logger.Error(err)
-	}
+	configs.LoadConfig()
 
-	DBHOST := os.Getenv("DB_HOST")
-	DBUSERNAME := os.Getenv("DB_USERNAME")
-	DBPASSWORD := os.Getenv("DB_PASSWORD")
-	DBNAME := os.Getenv("DB_NAME")
-	DBPORT := os.Getenv("DB_PORT")
+	DBHOST := configs.AppConfig.Database.Host
+	DBUSERNAME := configs.AppConfig.Database.User
+	DBPASSWORD := configs.AppConfig.Database.Password
+	DBNAME := configs.AppConfig.Database.DBName
+	DBPORT := configs.AppConfig.Database.Port
 
 	db, err := database.NewPostgresConnection(DBHOST, DBUSERNAME, DBPASSWORD, DBNAME, DBPORT)
+	fmt.Println(db)
 	if err != nil {
 		e.Logger.Error(err)
 		return err
@@ -41,7 +38,7 @@ func RoutingRestAPI(e *echo.Echo) error {
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 	e.POST("/login", userHandler.Login)
-	e.POST("/logout", userHandler.Logout)
+	// e.POST("/logout", userHandler.Logout)
 
 	// Routing API User
 	e.POST("/register", userHandler.SaveUser)
@@ -89,7 +86,7 @@ func RoutingRestAPI(e *echo.Echo) error {
 	e.PUT("/reservations/:id/cancel", reservationHandler.CancelReservation, middleware.AuthMiddleware)
 	e.GET("/room-schedule", reservationHandler.GetRoomSchedule, middleware.AuthMiddleware)
 	e.GET("/reservations/schedules", reservationHandler.GetSchedules, middleware.AuthMiddleware)
-	e.GET("/dashboard", reservationHandler.GetDashboardData, middleware.AuthMiddleware)
+	e.GET("/dashboard", reservationHandler.GetDashboardData, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 
 	e.Static("/photos", "/public/photos")
 
