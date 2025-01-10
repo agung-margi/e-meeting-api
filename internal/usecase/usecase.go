@@ -23,6 +23,8 @@ type ReservationUseCase interface {
 	CancelReservation(ctx context.Context, id int, userId int, isAdmin bool) error
 	GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error)
 	GetDashboardData(ctx context.Context, startDate, endDate time.Time) (entity.Dashboard, error)
+	ExpireReservations(ctx context.Context) error
+	StartExpiredReservationWorker(ctx context.Context)
 }
 
 type SnackUseCase interface {

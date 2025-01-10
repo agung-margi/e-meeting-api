@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
-	"fmt"
 )
 
 type inquiryRepo struct {
@@ -30,9 +29,6 @@ func (r *inquiryRepo) Save(ctx context.Context, inquiry *entity.Inquiry) (*entit
 		)
 		RETURNING	id
 		`
-
-	fmt.Println("Running query to save inquiry...")
-
 	var id int
 	err := r.DB.QueryRowContext(ctx, query,
 		inquiry.UserID, inquiry.RoomID, inquiry.RoomName, inquiry.RoomType, inquiry.RoomCapacity, inquiry.RoomPrice,
@@ -55,7 +51,7 @@ func (r *inquiryRepo) GetByID(ctx context.Context, id int, userId int) (*entity.
 		&inquiry.Participants, &inquiry.SnackID, &inquiry.SnackName, &inquiry.SnackCategory, &inquiry.SnackPrice,
 		&inquiry.TotalRoomPrice, &inquiry.TotalSnackPrice, &inquiry.TotalPrice, &inquiry.Notes, &inquiry.CreatedAt, &inquiry.UpdatedAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get inquiry: %w", err)
+		return nil, err
 	}
 	return inquiry, nil
 }

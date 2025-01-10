@@ -50,6 +50,7 @@ type ReservationRepository interface {
 	GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error)
 	GetDashboardDataByDateRange(ctx context.Context, startDate, endDate time.Time) (entity.Dashboard, error)
 	GetRoomOmzetByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomOmzetDetails, error)
+	GetExpiredReservations(ctx context.Context, now time.Time) ([]entity.Reservation, error)
 }
 
 type InquiryRepository interface {

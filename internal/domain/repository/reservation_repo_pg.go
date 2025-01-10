@@ -6,6 +6,7 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -362,9 +363,23 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 }
 
 func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationID int, status string) error {
-	query := "UPDATE reservations SET status = $1 ,updated_at = now() WHERE id = $2"
-	_, err := r.DB.ExecContext(ctx, query, status, reservationID)
-	return err
+	query := "UPDATE reservations SET status = $1, updated_at = now() WHERE id = $2"
+
+	result, err := r.DB.ExecContext(ctx, query, status, reservationID)
+	if err != nil {
+		return fmt.Errorf("failed to execute update query: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("no rows updated for reservation ID: %d", reservationID)
+	}
+
+	return nil
 }
 
 func (r *reservationRepo) GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error) {
@@ -479,4 +494,24 @@ func (r *reservationRepo) GetRoomOmzetByDateRange(ctx context.Context, startDate
 	}
 
 	return roomOmzetDetails, nil
+}
+
+func (r *reservationRepo) GetExpiredReservations(ctx context.Context, now time.Time) ([]entity.Reservation, error) {
+	query := "SELECT id, expired_at FROM reservations WHERE status = 'booked' AND expired_at <= $1"
+	rows, err := r.DB.QueryContext(ctx, query, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var expiredReservations []entity.Reservation
+	for rows.Next() {
+		var res entity.Reservation
+		if err := rows.Scan(&res.ID, &res.ExpiredAt); err != nil {
+			return nil, err
+		}
+		expiredReservations = append(expiredReservations, res)
+	}
+
+	return expiredReservations, nil
 }

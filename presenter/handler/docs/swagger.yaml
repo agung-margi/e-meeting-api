@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   model.LoginRequest:
     properties:
@@ -72,8 +73,13 @@ definitions:
       status:
         type: integer
     type: object
+host: localhost:8080
 info:
   contact: {}
+  description: Ini adalah API untuk E-Meeting
+  termsOfService: http://swagger.io/terms/
+  title: E-Meeting API
+  version: "1.0"
 paths:
   /dashboard:
     get:
@@ -187,7 +193,7 @@ paths:
       - description: Room type
         in: query
         name: room_type
-        type: string
+        type: integer
       - description: Status
         in: query
         name: status

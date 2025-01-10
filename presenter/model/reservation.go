@@ -37,6 +37,9 @@ type ReservationDetailsResponse struct {
 	SnacksDetails []SnackDetailsResponse          `json:"consumption"`
 	TotalPrice    []ReservationTotalPriceResponse `json:"totalPrice"`
 	Notes         string                          `json:"notes"`
+	CreatedAt     time.Time                       `json:"createdAt"`
+	UpdatedAt     time.Time                       `json:"updatedAt"`
+	ExpiredAt     time.Time                       `json:"expiredAt"`
 }
 
 type RoomDetailsResponse struct {

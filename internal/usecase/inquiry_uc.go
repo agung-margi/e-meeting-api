@@ -23,26 +23,20 @@ func NewInquiryUseCase(inquiryRepo repository.InquiryRepository, roomRepo reposi
 
 func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservation) (*entity.Inquiry, error) {
 
-	fmt.Println("=== Start Save Function ===")
-	fmt.Println("Reservation Details:", reservation)
-	fmt.Println("Room ID:", reservation.RoomID, "Booking Date:", reservation.BookingDate,
-		"Start Time:", reservation.StartTime, "End Time:", reservation.EndTime)
-
 	// Get room details
 	room, err := u.roomRepo.GetByID(ctx, reservation.RoomID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get room details: %w", err)
+		return nil, err
 	}
 
 	// Get snack details (if any)
 	var snack *entity.Snack
 	if reservation.SnackID != nil {
-		fmt.Println("Fetching snack with ID:", *reservation.SnackID)
+
 		snack, err = u.snackRepo.GetByID(ctx, *reservation.SnackID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get snack details: %w", err)
+			return nil, err
 		}
-		fmt.Println("Fetched snack:", snack)
 	}
 
 	// Parse start and end time
@@ -147,11 +141,8 @@ func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservati
 	// Save inquiry
 	inquiry, err = u.inquiryRepo.Save(ctx, inquiry)
 	if err != nil {
-		fmt.Println("Error saving inquiry:", err)
-		return nil, fmt.Errorf("failed to save inquiry: %w", err)
+		return nil, err
 	}
-
-	fmt.Println("Inquiry saved successfully:", inquiry)
 	return inquiry, nil
 }
 

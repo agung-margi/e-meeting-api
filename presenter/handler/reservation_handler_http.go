@@ -3,7 +3,6 @@ package handler
 import (
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/presenter/response"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -123,9 +122,7 @@ func (h *reservationHandler) CancelReservation(c echo.Context) error {
 	}
 
 	userId := c.Get("user_id").(float64)
-	fmt.Println(userId)
 	isAdmin := c.Get("is_admin").(bool)
-	fmt.Println(isAdmin)
 
 	err = h.useCase.CancelReservation(c.Request().Context(), id, int(userId), isAdmin)
 
@@ -329,7 +326,6 @@ func (h *reservationHandler) GetSchedules(c echo.Context) error {
 
 	startDateStr := c.QueryParam("start_date")
 	endDateStr := c.QueryParam("end_date")
-	fmt.Println(startDateStr, endDateStr)
 
 	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
@@ -350,7 +346,6 @@ func (h *reservationHandler) GetSchedules(c echo.Context) error {
 	}
 
 	currentTime := time.Now().UTC()
-	fmt.Println(currentTime)
 	for i := range schedules {
 		if currentTime.Before(schedules[i].StartTime) {
 			schedules[i].Status = "upcoming"

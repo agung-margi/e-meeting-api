@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
-	"fmt"
 )
 
 type snackRepo struct {
@@ -20,8 +19,7 @@ func (r *snackRepo) GetByID(ctx context.Context, id int) (*entity.Snack, error) 
 	snack := &entity.Snack{}
 	err := r.DB.QueryRowContext(ctx, query, id).Scan(&snack.ID, &snack.Name, &snack.Category, &snack.Price)
 	if err != nil {
-		fmt.Println("Error fetching snack:", err)
-		return nil, fmt.Errorf("failed to get snack: %w", err)
+		return nil, err
 	}
 	return snack, nil
 }

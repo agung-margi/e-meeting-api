@@ -7,7 +7,6 @@ import (
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -208,7 +207,7 @@ func (h *userHandler) UpdateUser(c echo.Context) error {
 		if oldUser.ImgUrl != "" {
 			oldFilePath := strings.Replace(oldUser.ImgUrl, os.Getenv("BASE_URL")+"/photos/", "public/photos/", 1)
 			if err := os.Remove(oldFilePath); err != nil {
-				fmt.Println("Failed to delete old file:", err)
+				return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to delete old image"))
 			}
 		}
 	} else {

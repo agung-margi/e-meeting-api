@@ -5,7 +5,6 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/presenter/model"
-	"fmt"
 )
 
 type roomUseCase struct {
@@ -43,10 +42,6 @@ func (u *roomUseCase) SaveRoom(ctx context.Context, roomRequest *model.RoomReque
 	if err != nil {
 		return err
 	}
-
-	// Debugging: Log a success message when the room is successfully saved.
-	fmt.Println("Room saved successfully.")
-
 	return nil
 }
 

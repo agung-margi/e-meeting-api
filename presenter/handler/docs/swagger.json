@@ -1,8 +1,14 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "Ini adalah API untuk E-Meeting",
+        "title": "E-Meeting API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {},
+        "version": "1.0"
     },
+    "host": "localhost:8080",
+    "basePath": "/",
     "paths": {
         "/dashboard": {
             "get": {
@@ -182,7 +188,7 @@
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Room type",
                         "name": "room_type",
                         "in": "query"

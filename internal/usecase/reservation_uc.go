@@ -6,7 +6,7 @@ import (
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/presenter/model"
 	"errors"
-	"fmt"
+	"log"
 	"time"
 )
 
@@ -44,13 +44,24 @@ func (u *reservationUseCase) PayReservation(ctx context.Context, id int, userId 
 		return errors.New("reservation that has already been paid")
 	}
 
-	// if time.Now().After(reservation.StartTime) {
-	// 	return errors.New("reservation that has already started")
-	// }
+	// Parsing StartTime dan EndTime dari string ke time.Time
+	startTime, err := time.Parse("2006-01-02T15:04:05", reservation.StartTime)
+	if err != nil {
+		return errors.New("invalid start time format")
+	}
 
-	// if time.Now().After(reservation.EndTime) {
-	// 	return errors.New("reservation that has already ended")
-	// }
+	endTime, err := time.Parse("2006-01-02T15:04:05", reservation.EndTime)
+	if err != nil {
+		return errors.New("invalid end time format")
+	}
+
+	if time.Now().After(startTime) {
+		return errors.New("reservation that has already started")
+	}
+
+	if time.Now().After(endTime) {
+		return errors.New("reservation that has already ended")
+	}
 
 	if reservation.Status == "cancelled" {
 		return errors.New("reservation that has already been cancelled")
@@ -138,7 +149,6 @@ func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int
 		return nil, err
 	}
 	reservationDetails, err := u.repo.GetReservationDetails(ctx, reservation.ID)
-	fmt.Println("reservationDetails:", reservationDetails)
 	if err != nil {
 		return nil, err
 	}
@@ -190,4 +200,36 @@ func (u *reservationUseCase) GetDashboardData(ctx context.Context, startDate, en
 	}
 
 	return response, nil
+}
+
+func (u *reservationUseCase) ExpireReservations(ctx context.Context) error {
+	expiredReservations, err := u.repo.GetExpiredReservations(ctx, time.Now())
+	if err != nil {
+		return err
+	}
+
+	for _, reservation := range expiredReservations {
+		err := u.repo.UpdateStatus(ctx, reservation.ID, "cancelled")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (u *reservationUseCase) StartExpiredReservationWorker(ctx context.Context) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			err := u.ExpireReservations(ctx)
+			if err != nil {
+				log.Printf("Error expiring reservations: %v", err)
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
 }

@@ -6,7 +6,6 @@ import (
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -104,15 +103,12 @@ func (h *roomHandler) GetRooms(c echo.Context) error {
 // @Router /rooms [post]
 func (h *roomHandler) SaveRoom(c echo.Context) error {
 
-	fmt.Println("Received Headers:", c.Request().Header)
 	room := &model.RoomRequest{}
 
 	room.Name = c.FormValue("name")
 	room.RoomTypeId, _ = strconv.Atoi(c.FormValue("room_type_id"))
 	room.Price, _ = strconv.Atoi(c.FormValue("price"))
 	room.Capacity, _ = strconv.Atoi(c.FormValue("capacity"))
-
-	fmt.Printf("RoomRequest after manual binding: %+v\n", room)
 
 	err := c.Bind(room)
 	if err != nil {
@@ -210,13 +206,10 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to retrieve room details"))
 	}
-
-	fmt.Println("Received Headers:", c.Request().Header)
 	room := &model.RoomRequest{}
 
 	room.Name = c.FormValue("name")
 	roomTypeStr := c.FormValue("room_type_id")
-	fmt.Println("roomTypeStr: ", roomTypeStr)
 	if roomTypeStr == "" {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("room_type_id is required"))
 	}
@@ -257,7 +250,7 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 		if oldRoom.ImgUrl != "" {
 			oldFilePath := strings.Replace(oldRoom.ImgUrl, os.Getenv("BASE_URL")+"/photos/", "public/photos/", 1)
 			if err := os.Remove(oldFilePath); err != nil {
-				fmt.Println("Failed to delete old file:", err)
+				return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to remove old image"))
 			}
 		}
 

@@ -11,7 +11,7 @@ CREATE TABLE inquiries(
     end_time timestamp without time zone NOT NULL,
     duration integer NOT NULL,
     name varchar(255) NOT NULL,
-    phone varchar(20) NOT NULL,
+    phone varchar(15) NOT NULL,
     company varchar(255) NOT NULL,
     participants integer NOT NULL,
     snack_id integer,

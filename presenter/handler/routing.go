@@ -1,12 +1,12 @@
 package handler
 
 import (
+	"context"
 	"e-meeting-api/configs"
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/pkg/database"
 	"e-meeting-api/pkg/middleware"
-	"fmt"
 
 	_ "e-meeting-api/presenter/handler/docs"
 
@@ -14,7 +14,7 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
-func RoutingRestAPI(e *echo.Echo) error {
+func RoutingRestAPI(e *echo.Echo, ctx context.Context) error {
 
 	configs.LoadConfig()
 
@@ -25,7 +25,6 @@ func RoutingRestAPI(e *echo.Echo) error {
 	DBPORT := configs.AppConfig.Database.Port
 
 	db, err := database.NewPostgresConnection(DBHOST, DBUSERNAME, DBPASSWORD, DBNAME, DBPORT)
-	fmt.Println(db)
 	if err != nil {
 		e.Logger.Error(err)
 		return err
@@ -78,6 +77,11 @@ func RoutingRestAPI(e *echo.Echo) error {
 	reservationUsecase := usecase.NewReservationUseCase(reservationRepo, inquiryRepo)
 	reservationHandler := NewReservationHandler(reservationUsecase)
 
+	go func() {
+		// Panggil fungsi tanpa menangkap nilai yang dikembalikan
+		reservationUsecase.StartExpiredReservationWorker(ctx)
+	}()
+
 	e.POST("/reservations/inquiry", inquiryHandler.SaveInquiry, middleware.AuthMiddleware)
 	e.POST("/reservations/:inquiry_id", reservationHandler.SaveReservation, middleware.AuthMiddleware)
 	e.GET("/reservations/:id", reservationHandler.GetReservation, middleware.AuthMiddleware)
@@ -89,6 +93,7 @@ func RoutingRestAPI(e *echo.Echo) error {
 	e.GET("/dashboard", reservationHandler.GetDashboardData, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 
 	e.Static("/photos", "/public/photos")
+	//
 
 	return nil
 }

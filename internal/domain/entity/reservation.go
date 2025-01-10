@@ -26,6 +26,7 @@ type Reservation struct {
 	Notes           string `json:"notes" `
 	CreatedAt       string `json:"createdAt"`
 	UpdatedAt       string `json:"updatedAt"`
+	ExpiredAt       string `json:"expiredAt"`
 }
 
 type ReservationDetails struct {
