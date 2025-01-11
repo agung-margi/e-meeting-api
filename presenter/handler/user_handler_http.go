@@ -80,7 +80,7 @@ func (h *userHandler) GetUser(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param user body model.UserRequest true "User Request"
-// @Success 200 {object} response.APIResponse
+// @Success 200 {object} response.APIResponse "success register"
 // @Failure 400 {object} response.APIResponse
 // @Failure 500 {object} response.APIResponse
 // @Router /register [post]

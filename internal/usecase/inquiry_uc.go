@@ -50,12 +50,12 @@ func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservati
 
 	startTime, err := time.Parse(format, startStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid start time format: %w", err)
+		return nil, errors.New("invalid start time format")
 	}
 
 	endTime, err := time.Parse(format, endStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid end time format: %w", err)
+		return nil, errors.New("invalid end time format")
 	}
 
 	// Validation checks
@@ -72,13 +72,13 @@ func (u *inquiryUsecase) Save(ctx context.Context, reservation *entity.Reservati
 	}
 
 	if reservation.Participants > room.Capacity {
-		return nil, fmt.Errorf("room capacity exceeded: maximum %d participants allowed", room.Capacity)
+		return nil, errors.New("participants should not exceed room capacity")
 	}
 
 	// Check room availability
 	available, err := u.reservationRepo.CheckAvailability(ctx, reservation.RoomID, startStr, endStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check room availability: %w", err)
+		return nil, errors.New("failed to check room availability")
 	}
 
 	if !available {

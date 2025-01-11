@@ -6,7 +6,6 @@ import (
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/presenter/model"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 )
@@ -47,12 +46,12 @@ func (u *reservationUseCase) PayReservation(ctx context.Context, id int, userId 
 
 	startTime, err := time.Parse(time.RFC3339, reservation.StartTime)
 	if err != nil {
-		return fmt.Errorf("invalid start time format: %v", err)
+		return errors.New("invalid start time format")
 	}
 
 	endTime, err := time.Parse(time.RFC3339, reservation.EndTime)
 	if err != nil {
-		return fmt.Errorf("invalid end time format: %v", err)
+		return errors.New("invalid end time format")
 	}
 	if time.Now().After(startTime) {
 		return errors.New("reservation that has already started")
@@ -84,12 +83,12 @@ func (u *reservationUseCase) CancelReservation(ctx context.Context, id int, user
 
 	startTime, err := time.Parse(time.RFC3339, reservation.StartTime)
 	if err != nil {
-		return fmt.Errorf("invalid start time format: %v", err)
+		return errors.New("invalid start time format")
 	}
 
 	endTime, err := time.Parse(time.RFC3339, reservation.EndTime)
 	if err != nil {
-		return fmt.Errorf("invalid end time format: %v", err)
+		return errors.New("invalid end time format")
 	}
 	if time.Now().After(startTime) {
 		return errors.New("reservation that has already started")

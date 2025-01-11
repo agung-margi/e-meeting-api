@@ -6,7 +6,6 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -374,16 +373,16 @@ func (r *reservationRepo) UpdateStatus(ctx context.Context, reservationID int, s
 
 	result, err := r.DB.ExecContext(ctx, query, status, reservationID)
 	if err != nil {
-		return fmt.Errorf("failed to execute update query: %w", err)
+		return errors.New("failed to update reservation status")
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return errors.New("failed to get rows affected")
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("no rows updated for reservation ID: %d", reservationID)
+		return errors.New("no rows were updated")
 	}
 
 	return nil

@@ -142,7 +142,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "success register",
                         "schema": {
                             "$ref": "#/definitions/response.APIResponse"
                         }

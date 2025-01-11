@@ -6,7 +6,6 @@ import (
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -107,12 +106,6 @@ func (h *roomHandler) GetRooms(c echo.Context) error {
 // @Failure 500 {object} response.APIResponse
 // @Router /rooms [post]
 func (h *roomHandler) SaveRoom(c echo.Context) error {
-
-	fmt.Println("Name:", c.FormValue("name"))
-	fmt.Println("Room Type ID:", c.FormValue("room_type_id"))
-	fmt.Println("Price:", c.FormValue("price"))
-	fmt.Println("Capacity:", c.FormValue("capacity"))
-	// fmt.Println("Image:", c.FormFile("image"))
 
 	room := &model.RoomRequest{}
 
@@ -221,7 +214,6 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 
 	room.Name = c.FormValue("name")
 	roomTypeStr := c.FormValue("room_type_id")
-	fmt.Println("roomTypeStr:", roomTypeStr)
 	if roomTypeStr == "" {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("room_type_id is required"))
 	}
