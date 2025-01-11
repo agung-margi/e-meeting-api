@@ -15,8 +15,8 @@ func NewRoomUseCase(repo repository.RoomRepository) RoomUseCase {
 	return &roomUseCase{repo: repo}
 }
 
-func (u *roomUseCase) GetAll(ctx context.Context, name string, roomType int, capacity int) ([]entity.Room, error) {
-	rooms, err := u.repo.GetAll(ctx, name, roomType, capacity)
+func (u *roomUseCase) GetAll(ctx context.Context, name string, roomTypeId int, capacity int) ([]entity.Room, error) {
+	rooms, err := u.repo.GetAll(ctx, name, roomTypeId, capacity)
 	if err != nil {
 		return nil, err
 	}

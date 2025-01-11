@@ -7,5 +7,5 @@
     "dbname": "meetdb"
   },
   "jwt_secret_key": "JuySADi1uh9&sajTRC",
-  "base_url": "http://localhost:8080"
+  "base_url": "http://localhost:8882"
 }

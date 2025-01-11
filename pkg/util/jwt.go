@@ -3,6 +3,7 @@ package util
 import (
 	"e-meeting-api/configs"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -27,9 +28,24 @@ func VerifyToken(secret string, tokenString string) (*jwt.Token, error) {
 	})
 }
 
-func GenerateResetToken(secret string, expiry time.Duration, claims jwt.MapClaims) (string, error) {
-	claims["exp"] = time.Now().Add(expiry).Unix()
+func GeneratePasswordResetToken(userID int) (string, error) {
+	// Membuat token dengan expiration time 30 menit
+	expirationTime := time.Now().Add(30 * time.Minute)
 
+	claims := &jwt.RegisteredClaims{
+		Subject:   fmt.Sprintf("%d", userID),
+		ExpiresAt: jwt.NewNumericDate(expirationTime),
+	}
+
+	// Membuat token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(os.Getenv(secret)))
+
+	// Menandatangani token dengan secret key
+	signedToken, err := token.SignedString([]byte(secret))
+	if err != nil {
+		return "",
+			fmt.Errorf("failed to sign the token: %w", err)
+	}
+
+	return signedToken, nil
 }

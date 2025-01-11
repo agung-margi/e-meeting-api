@@ -1,4 +1,4 @@
-basePath: /
+basePath: /api/v1
 definitions:
   model.LoginRequest:
     properties:
@@ -73,7 +73,7 @@ definitions:
       status:
         type: integer
     type: object
-host: localhost:8080
+host: localhost:8882
 info:
   contact: {}
   description: Ini adalah API untuk E-Meeting
@@ -456,7 +456,7 @@ paths:
         type: string
       - description: Room type filter (1=Small, 2=Medium, 3=Large)
         in: query
-        name: roomType
+        name: roomTypeId
         type: integer
       - description: Capacity filter (1=<10, 2=11-50, 3=51-100)
         in: query

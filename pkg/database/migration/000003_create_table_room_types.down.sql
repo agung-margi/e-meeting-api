@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS room_types;
+DROP TABLE IF EXISTS room_types CASCADE;

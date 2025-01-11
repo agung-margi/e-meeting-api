@@ -16,8 +16,23 @@ func NewRoomRepository(db *sql.DB) RoomRepository {
 	return &roomRepo{DB: db}
 }
 
-func (r *roomRepo) GetAll(ctx context.Context, name string, roomType int, capacity int) ([]entity.Room, error) {
-	query := "SELECT id, name, room_type_id, price, capacity, img_url, created_at, updated_at FROM rooms WHERE 1=1"
+func (r *roomRepo) GetAll(ctx context.Context, name string, roomTypeId int, capacity int) ([]entity.Room, error) {
+	query := `
+SELECT 
+    r.id, 
+    r.name, 
+    r.room_type_id, 
+    rt.name AS room_type, 
+    r.price, 
+    r.capacity, 
+    r.img_url, 
+    r.created_at, 
+    r.updated_at
+FROM 
+    rooms r
+INNER JOIN 
+    room_types rt ON r.room_type_id = rt.id WHERE 1=1 
+`
 
 	var args []interface{}
 	argIndex := 1
@@ -30,9 +45,9 @@ func (r *roomRepo) GetAll(ctx context.Context, name string, roomType int, capaci
 	}
 
 	// Filter berdasarkan roomType
-	if roomType > 0 {
+	if roomTypeId > 0 {
 		query += " AND room_type_id = $" + strconv.Itoa(argIndex)
-		args = append(args, roomType)
+		args = append(args, roomTypeId)
 		argIndex++
 	}
 
@@ -68,6 +83,7 @@ func (r *roomRepo) GetAll(ctx context.Context, name string, roomType int, capaci
 		if err := rows.Scan(
 			&room.ID,
 			&room.Name,
+			&room.RoomTypeId,
 			&room.RoomType,
 			&room.Price,
 			&room.Capacity,
@@ -90,15 +106,15 @@ func (r *roomRepo) GetAll(ctx context.Context, name string, roomType int, capaci
 func (r *roomRepo) GetByID(ctx context.Context, id int) (*entity.Room, error) {
 	query := `
 		SELECT 
-			r.id, r.name, rt.name AS room_type, 
-			r.price, r.capacity, r.img_url, 
-			r.created_at, r.updated_at
-		FROM 
-			rooms r
-		INNER JOIN 
-			room_types rt ON r.room_type_id = rt.id
-		WHERE 
-			r.id = $1
+    r.id, r.name, rt.id AS room_type_id, rt.name AS room_type,
+    r.price, r.capacity, r.img_url, 
+    r.created_at, r.updated_at
+FROM 
+    rooms r
+INNER JOIN 
+    room_types rt ON r.room_type_id = rt.id
+WHERE 
+    r.id = $1
 	`
 	row := r.DB.QueryRowContext(ctx, query, id)
 
@@ -107,6 +123,7 @@ func (r *roomRepo) GetByID(ctx context.Context, id int) (*entity.Room, error) {
 	err := row.Scan(
 		&room.ID,
 		&room.Name,
+		&room.RoomTypeId,
 		&room.RoomType,
 		&room.Price,
 		&room.Capacity,
@@ -126,7 +143,7 @@ func (r *roomRepo) GetByID(ctx context.Context, id int) (*entity.Room, error) {
 func (r *roomRepo) SaveRoom(ctx context.Context, room *entity.Room) error {
 	query := "INSERT INTO rooms (name, room_type_id, price, capacity, img_url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5,now(),now()) RETURNING id"
 
-	row := r.DB.QueryRowContext(ctx, query, room.Name, room.RoomType, room.Price, room.Capacity, room.ImgUrl)
+	row := r.DB.QueryRowContext(ctx, query, room.Name, room.RoomTypeId, room.Price, room.Capacity, room.ImgUrl)
 
 	if err := row.Scan(&room.ID); err != nil {
 		return err
@@ -140,7 +157,7 @@ func (r *roomRepo) UpdateRoom(ctx context.Context, id int, room *entity.Room) er
 		SET name = $1, room_type_id = $2, price = $3, capacity = $4, img_url = $5, updated_at = NOW()
 		WHERE id = $6
 	`
-	_, err := r.DB.ExecContext(ctx, query, room.Name, room.RoomType, room.Price, room.Capacity, room.ImgUrl, room.ID)
+	_, err := r.DB.ExecContext(ctx, query, room.Name, room.RoomTypeId, room.Price, room.Capacity, room.ImgUrl, room.ID)
 	if err != nil {
 		return err
 	}

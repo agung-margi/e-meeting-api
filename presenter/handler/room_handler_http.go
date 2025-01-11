@@ -6,6 +6,7 @@ import (
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"e-meeting-api/presenter/response"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,7 +39,7 @@ func NewRoomHandler(roomUseCase usecase.RoomUseCase) RoomHandler {
 // @Produce json
 // @Security ApiKeyAuth
 // @Param name query string false "Room name filter"
-// @Param roomType query int false "Room type filter (1=Small, 2=Medium, 3=Large)"
+// @Param roomTypeId query int false "Room type filter (1=Small, 2=Medium, 3=Large)"
 // @Param capacity query int false "Capacity filter (1=<10, 2=11-50, 3=51-100)"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
@@ -47,16 +48,16 @@ func NewRoomHandler(roomUseCase usecase.RoomUseCase) RoomHandler {
 func (h *roomHandler) GetRooms(c echo.Context) error {
 	// Ambil parameter query dari request
 	name := c.QueryParam("name")
-	roomType := c.QueryParam("roomType")
+	roomTypeId := c.QueryParam("roomTypeId")
 	capacity := c.QueryParam("capacity")
 
 	// Default nilai untuk roomType
 	roomTypeInt := 0
 
 	// Jika roomType ada, coba konversi ke integer
-	if roomType != "" {
+	if roomTypeId != "" {
 		var err error
-		roomTypeInt, err = strconv.Atoi(roomType)
+		roomTypeInt, err = strconv.Atoi(roomTypeId)
 		if err != nil || roomTypeInt < 1 || roomTypeInt > 3 {
 			return c.JSON(http.StatusBadRequest, "Invalid roomType")
 		}
@@ -77,6 +78,10 @@ func (h *roomHandler) GetRooms(c echo.Context) error {
 
 	// Panggil use case untuk mendapatkan rooms berdasarkan filter
 	rooms, err := h.roomUseCase.GetAll(c.Request().Context(), name, roomTypeInt, capacityInt)
+
+	if len(rooms) == 0 {
+		return c.JSON(http.StatusNotFound, response.NotFoundResponse("rooms not found"))
+	}
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
@@ -102,6 +107,12 @@ func (h *roomHandler) GetRooms(c echo.Context) error {
 // @Failure 500 {object} response.APIResponse
 // @Router /rooms [post]
 func (h *roomHandler) SaveRoom(c echo.Context) error {
+
+	fmt.Println("Name:", c.FormValue("name"))
+	fmt.Println("Room Type ID:", c.FormValue("room_type_id"))
+	fmt.Println("Price:", c.FormValue("price"))
+	fmt.Println("Capacity:", c.FormValue("capacity"))
+	// fmt.Println("Image:", c.FormFile("image"))
 
 	room := &model.RoomRequest{}
 
@@ -204,12 +215,13 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 
 	oldRoom, err := h.roomUseCase.GetByID(c.Request().Context(), id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to retrieve room details"))
+		return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse(err.Error()))
 	}
 	room := &model.RoomRequest{}
 
 	room.Name = c.FormValue("name")
 	roomTypeStr := c.FormValue("room_type_id")
+	fmt.Println("roomTypeStr:", roomTypeStr)
 	if roomTypeStr == "" {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("room_type_id is required"))
 	}

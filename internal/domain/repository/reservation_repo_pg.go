@@ -42,7 +42,7 @@ func (r *reservationRepo) CheckAvailability(ctx context.Context, roomId int, sta
         FROM reservations
         WHERE room_id = $1
           AND (start_time < $3 AND end_time > $2)
-					AND status = 'booked'
+					AND status != 'cancelled'
         LIMIT 1
     `
 	var exists int
@@ -263,7 +263,10 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 			r.total_price AS total_price,
 			r.room_price AS total_room_price,
 			COALESCE(r.snack_price, 0) AS total_snack_price,
-			rd.notes AS reservation_notes
+			rd.notes AS reservation_notes,
+			r.created_at,
+			r.updated_at,
+			r.expired_at
 
 		FROM 
 			reservations r
@@ -287,7 +290,7 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 		roomID, roomCapacity, roomPrice, participants, snackID, snackPrice, totalPrice, totalRoomPrice, totalSnackPrice int
 		roomName, customerName, customerPhone, companyName, snackCategory, snackName, notes                             string
 		userID                                                                                                          int
-		dateReservation, startDate, endDate                                                                             time.Time
+		dateReservation, startDate, endDate, createdAt, updatedAt, expiredAt                                            time.Time
 	)
 
 	// Scan the results from the query
@@ -297,7 +300,7 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 		&customerName, &customerPhone, &companyName, &dateReservation, &startDate, &endDate, &participants,
 		&snackID, &snackCategory, &snackName, &snackPrice,
 		&totalPrice, &totalRoomPrice, &totalSnackPrice,
-		&notes,
+		&notes, &createdAt, &updatedAt, &expiredAt,
 	)
 	if err != nil {
 		return nil, err
@@ -358,6 +361,10 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 	reservation.Notes = notes
 	reservation.ReservationID = reservationID
 	reservation.UserID = userID
+
+	reservation.CreatedAt = createdAt
+	reservation.UpdatedAt = updatedAt
+	reservation.ExpiredAt = expiredAt
 
 	return &[]model.ReservationDetailsResponse{*reservation}, nil
 }

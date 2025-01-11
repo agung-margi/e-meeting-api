@@ -12,8 +12,8 @@ import (
 // @version 1.0
 // @description Ini adalah API untuk E-Meeting
 // @termsOfService http://swagger.io/terms/
-// @host localhost:8080
-// @BasePath /
+// @host localhost:8882
+// @BasePath /api/v1
 
 // @SecurityDefinitions.apikey ApiKeyAuth
 // @In header
@@ -25,9 +25,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := handler.RoutingRestAPI(e, ctx); err != nil {
+	e.Static("/photos", "/public/photos")
+	v1 := e.Group("/api/v1")
+
+	if err := handler.RoutingRestAPI(v1, e.Logger, ctx); err != nil {
 		e.Logger.Fatal(err)
 	}
 
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.Start(":8882"))
 }

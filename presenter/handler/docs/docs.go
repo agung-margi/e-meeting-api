@@ -613,7 +613,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "description": "Room type filter (1=Small, 2=Medium, 3=Large)",
-                        "name": "roomType",
+                        "name": "roomTypeId",
                         "in": "query"
                     },
                     {
@@ -1244,8 +1244,8 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
+	Host:             "localhost:8882",
+	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "E-Meeting API",
 	Description:      "Ini adalah API untuk E-Meeting",

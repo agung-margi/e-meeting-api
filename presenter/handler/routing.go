@@ -14,7 +14,7 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
-func RoutingRestAPI(e *echo.Echo, ctx context.Context) error {
+func RoutingRestAPI(g *echo.Group, logger echo.Logger, ctx context.Context) error {
 
 	configs.LoadConfig()
 
@@ -26,7 +26,7 @@ func RoutingRestAPI(e *echo.Echo, ctx context.Context) error {
 
 	db, err := database.NewPostgresConnection(DBHOST, DBUSERNAME, DBPASSWORD, DBNAME, DBPORT)
 	if err != nil {
-		e.Logger.Error(err)
+		logger.Error(err)
 		return err
 	}
 
@@ -35,39 +35,38 @@ func RoutingRestAPI(e *echo.Echo, ctx context.Context) error {
 	userUsecase := usecase.NewStudentUseCase(userRepo)
 	userHandler := NewUserHandler(userUsecase)
 
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
-	e.POST("/login", userHandler.Login)
-	// e.POST("/logout", userHandler.Logout)
+	g.GET("/swagger/*", echoSwagger.WrapHandler)
+	g.POST("/login", userHandler.Login)
 
 	// Routing API User
-	e.POST("/register", userHandler.SaveUser)
-	e.GET("/users/:id", userHandler.GetUser, middleware.AuthMiddleware)
-	e.PUT("/users/:id", userHandler.UpdateUser, middleware.AuthMiddleware)
+	g.POST("/register", userHandler.SaveUser)
+	g.GET("/users/:id", userHandler.GetUser, middleware.AuthMiddleware)
+	g.PUT("/users/:id", userHandler.UpdateUser, middleware.AuthMiddleware)
 
 	// Routing API Snack
 	snackRepo := repository.NewSnackRepository(db)
 	snackUsecase := usecase.NewSnackUseCase(snackRepo)
 	snackHandler := NewSnackHandler(snackUsecase)
 
-	e.GET("/snacks", snackHandler.GetSnacks, middleware.AuthMiddleware)
+	g.GET("/snacks", snackHandler.GetSnacks, middleware.AuthMiddleware)
 
 	// Routing API RoomType
 	roomtypeRepo := repository.NewRoomtypeRepository(db)
 	roomtypeUsecase := usecase.NewRoomtypeUseCase(roomtypeRepo)
 	roomtypeHandler := NewRoomTypeHandler(roomtypeUsecase)
 
-	e.GET("/roomtypes", roomtypeHandler.GetRoomTypes, middleware.AuthMiddleware)
+	g.GET("/roomtypes", roomtypeHandler.GetRoomTypes, middleware.AuthMiddleware)
 
 	// Routing API Room
 	roomRepo := repository.NewRoomRepository(db)
 	roomUsecase := usecase.NewRoomUseCase(roomRepo)
 	roomHandler := NewRoomHandler(roomUsecase)
 
-	e.GET("/rooms", roomHandler.GetRooms, middleware.AuthMiddleware)
-	e.GET("/rooms/:id", roomHandler.GetRoom, middleware.AuthMiddleware)
-	e.POST("/rooms", roomHandler.SaveRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
-	e.PUT("/rooms/:id", roomHandler.UpdateRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
-	e.DELETE("/rooms/:id", roomHandler.DeleteRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
+	g.GET("/rooms", roomHandler.GetRooms, middleware.AuthMiddleware)
+	g.GET("/rooms/:id", roomHandler.GetRoom, middleware.AuthMiddleware)
+	g.POST("/rooms", roomHandler.SaveRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
+	g.PUT("/rooms/:id", roomHandler.UpdateRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
+	g.DELETE("/rooms/:id", roomHandler.DeleteRoom, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 
 	// Routing API Inquiry & Reservation
 	inquiryRepo := repository.NewInquiryRepository(db)
@@ -77,22 +76,20 @@ func RoutingRestAPI(e *echo.Echo, ctx context.Context) error {
 	reservationUsecase := usecase.NewReservationUseCase(reservationRepo, inquiryRepo)
 	reservationHandler := NewReservationHandler(reservationUsecase)
 
+	// Start expired reservation worker
 	go func() {
-		// Panggil fungsi tanpa menangkap nilai yang dikembalikan
 		reservationUsecase.StartExpiredReservationWorker(ctx)
 	}()
 
-	e.POST("/reservations/inquiry", inquiryHandler.SaveInquiry, middleware.AuthMiddleware)
-	e.POST("/reservations/:inquiry_id", reservationHandler.SaveReservation, middleware.AuthMiddleware)
-	e.GET("/reservations/:id", reservationHandler.GetReservation, middleware.AuthMiddleware)
-	e.GET("/reservations", reservationHandler.GetReservations, middleware.AuthMiddleware)
-	e.PUT("/reservations/:id/pay", reservationHandler.PayReservation, middleware.AuthMiddleware)
-	e.PUT("/reservations/:id/cancel", reservationHandler.CancelReservation, middleware.AuthMiddleware)
-	e.GET("/room-schedule", reservationHandler.GetRoomSchedule, middleware.AuthMiddleware)
-	e.GET("/reservations/schedules", reservationHandler.GetSchedules, middleware.AuthMiddleware)
-	e.GET("/dashboard", reservationHandler.GetDashboardData, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
-
-	e.Static("/photos", "/public/photos")
+	g.POST("/reservations/inquiry", inquiryHandler.SaveInquiry, middleware.AuthMiddleware)
+	g.POST("/reservations/:inquiry_id", reservationHandler.SaveReservation, middleware.AuthMiddleware)
+	g.GET("/reservations/:id", reservationHandler.GetReservation, middleware.AuthMiddleware)
+	g.GET("/reservations", reservationHandler.GetReservations, middleware.AuthMiddleware)
+	g.PUT("/reservations/:id/pay", reservationHandler.PayReservation, middleware.AuthMiddleware)
+	g.PUT("/reservations/:id/cancel", reservationHandler.CancelReservation, middleware.AuthMiddleware)
+	g.GET("/room-schedule", reservationHandler.GetRoomSchedule, middleware.AuthMiddleware)
+	g.GET("/reservations/schedules", reservationHandler.GetSchedules, middleware.AuthMiddleware)
+	g.GET("/dashboard", reservationHandler.GetDashboardData, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
 	//
 
 	return nil

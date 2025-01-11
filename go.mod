@@ -5,7 +5,6 @@ go 1.22.5
 require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.1
 	github.com/lib/pq v1.10.9
 	github.com/swaggo/echo-swagger v1.4.1

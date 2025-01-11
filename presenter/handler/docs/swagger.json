@@ -7,8 +7,8 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8080",
-    "basePath": "/",
+    "host": "localhost:8882",
+    "basePath": "/api/v1",
     "paths": {
         "/dashboard": {
             "get": {
@@ -607,7 +607,7 @@
                     {
                         "type": "integer",
                         "description": "Room type filter (1=Small, 2=Medium, 3=Large)",
-                        "name": "roomType",
+                        "name": "roomTypeId",
                         "in": "query"
                     },
                     {
