@@ -1,0 +1,11 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": "5432",
+    "username": "postgres",
+    "password": "Bekasi2021$",
+    "dbname": "meetdb"
+  },
+  "jwt_secret_key": "JuySADi1uh9&sajTRC",
+  "base_url": "http://localhost:8882"
+}

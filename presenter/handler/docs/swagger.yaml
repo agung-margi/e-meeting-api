@@ -1,0 +1,802 @@
+basePath: /api/v1
+definitions:
+  model.LoginRequest:
+    properties:
+      password:
+        example: password
+        minLength: 6
+        type: string
+      username:
+        example: user1
+        minLength: 2
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  model.ReservationRequest:
+    properties:
+      bookingDate:
+        example: "2025-02-01"
+        type: string
+      company:
+        example: ABC Company
+        type: string
+      endTime:
+        example: "09:00"
+        type: string
+      name:
+        example: John Doe
+        type: string
+      notes:
+        example: Additional notes
+        type: string
+      participants:
+        example: 10
+        type: integer
+      phone:
+        example: "1234567890"
+        type: string
+      roomId:
+        example: 2
+        type: integer
+      snackId:
+        example: 1
+        type: integer
+      startTime:
+        example: "08:00"
+        type: string
+    type: object
+  model.UserRequest:
+    properties:
+      email:
+        example: user1@example.com
+        type: string
+      password:
+        example: password
+        minLength: 6
+        type: string
+      username:
+        example: user1
+        minLength: 2
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  response.APIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+host: localhost:8882
+info:
+  contact: {}
+  description: Ini adalah API untuk E-Meeting
+  termsOfService: http://swagger.io/terms/
+  title: E-Meeting API
+  version: "1.0"
+paths:
+  /dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan data dashboard
+      parameters:
+      - description: Start date
+        in: query
+        name: start_date
+        type: string
+      - description: End date
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get dashboard data
+      tags:
+      - Dashboard
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: 'Melakukan login user berdasarkan username dan password misalnya
+        "username": "user1", "password": "password"'
+      parameters:
+      - description: Login Request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Login user
+      tags:
+      - Authentication
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan User
+      parameters:
+      - description: User Request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success register
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Register
+      tags:
+      - Authentication
+  /reservations:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan semua reservation
+      parameters:
+      - description: Start date
+        in: query
+        name: start_date
+        type: string
+      - description: End date
+        in: query
+        name: end_date
+        type: string
+      - description: Room type
+        in: query
+        name: room_type
+        type: integer
+      - description: Status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all reservations
+      tags:
+      - Reservation
+  /reservations/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan reservation
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get reservation by id
+      tags:
+      - Reservation
+  /reservations/{id}/cancel:
+    put:
+      consumes:
+      - application/json
+      description: Membatalkan reservation
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel reservation
+      tags:
+      - Reservation
+  /reservations/{id}/pay:
+    put:
+      consumes:
+      - application/json
+      description: Melakukan pembayaran reservation
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Pay reservation
+      tags:
+      - Reservation
+  /reservations/{inquiry_id}:
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan reservation
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: inquiry_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Save reservation
+      tags:
+      - Reservation
+  /reservations/inquiry:
+    post:
+      consumes:
+      - application/json
+      description: Save Inquiry
+      parameters:
+      - description: Reservation Request
+        in: body
+        name: reservation
+        required: true
+        schema:
+          $ref: '#/definitions/model.ReservationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Save Inquiry
+      tags:
+      - Reservation
+  /reservations/schedules:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan jadwal reservation room berdasarkan rentang tanggal
+      parameters:
+      - description: Start date
+        in: query
+        name: start_date
+        type: string
+      - description: End date
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get reservation schedules
+      tags:
+      - Reservation
+  /room-schedule:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan jadwal room
+      parameters:
+      - description: Room ID
+        in: query
+        name: room_id
+        required: true
+        type: integer
+      - description: Date
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get room schedule
+      tags:
+      - Reservation
+  /rooms:
+    get:
+      consumes:
+      - application/json
+      description: Get rooms with filters (name, roomType, capacity)
+      parameters:
+      - description: Room name filter
+        in: query
+        name: name
+        type: string
+      - description: Room type filter (1=Small, 2=Medium, 3=Large)
+        in: query
+        name: roomTypeId
+        type: integer
+      - description: Capacity filter (1=<10, 2=11-50, 3=51-100)
+        in: query
+        name: capacity
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all rooms
+      tags:
+      - Room
+    post:
+      consumes:
+      - multipart/form-data
+      description: Menyimpan room dengan upload file gambar
+      parameters:
+      - description: Room Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Room Type ID
+        in: formData
+        name: room_type_id
+        required: true
+        type: integer
+      - description: Price
+        in: formData
+        name: price
+        required: true
+        type: integer
+      - description: Capacity
+        in: formData
+        name: capacity
+        required: true
+        type: integer
+      - description: Room Image
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create room
+      tags:
+      - Room
+  /rooms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus room berdasarkan id
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete room by id
+      tags:
+      - Room
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan room berdasarkan id
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get room by id
+      tags:
+      - Room
+    put:
+      consumes:
+      - multipart/form-data
+      description: Mengupdate room berdasarkan id
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Room Name
+        in: formData
+        name: name
+        type: string
+      - description: Room Type ID
+        in: formData
+        name: room_type_id
+        type: integer
+      - description: Price
+        in: formData
+        name: price
+        type: integer
+      - description: Capacity
+        in: formData
+        name: capacity
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update room by id
+      tags:
+      - Room
+  /roomtypes:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan semua jenis room
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all room types
+      tags:
+      - Room Type
+  /snacks:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan Snacks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Snacks
+      tags:
+      - Snack
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan User berdasarkan id
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user by id
+      tags:
+      - User
+    put:
+      consumes:
+      - multipart/form-data
+      description: Memperbarui User berdasarkan id
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Username
+        in: formData
+        name: username
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        type: string
+      - description: IsAdmin
+        in: formData
+        name: isAdmin
+        type: boolean
+      - description: IsActive
+        in: formData
+        name: isActive
+        type: boolean
+      - description: Language
+        in: formData
+        name: language
+        type: string
+      - description: User Image
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update user by id
+      tags:
+      - User
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

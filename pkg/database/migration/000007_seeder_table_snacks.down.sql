@@ -1,0 +1,8 @@
+DELETE FROM snacks
+WHERE id=1;
+DELETE FROM snacks
+WHERE id=2;
+DELETE FROM snacks
+WHERE id=3;
+DELETE FROM snacks
+WHERE id=4;
