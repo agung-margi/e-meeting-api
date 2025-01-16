@@ -14,6 +14,7 @@ type UserRepository interface {
 	UpdateUser(ctx context.Context, id int, user *entity.User) error
 	CheckEmailExists(ctx context.Context, email string) (bool, error)
 	CheckUsernameExists(ctx context.Context, username string) (bool, error)
+	UpdatePassword(ctx context.Context, id int, password string) error
 }
 
 type SnackRepository interface {
@@ -56,4 +57,5 @@ type ReservationRepository interface {
 type InquiryRepository interface {
 	Save(context.Context, *entity.Inquiry) (*entity.Inquiry, error)
 	GetByID(ctx context.Context, id int, userId int) (*entity.Inquiry, error)
+	DeleteInquiry(ctx context.Context, id int, userId int) error
 }

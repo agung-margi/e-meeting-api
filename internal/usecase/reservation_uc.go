@@ -138,7 +138,8 @@ func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int
 		StartTime:   inquiry.StartTime,
 		EndTime:     inquiry.EndTime,
 		BookingDate: inquiry.BookingDate,
-		RoomPrice:   inquiry.RoomPrice,
+		RoomPrice:   inquiry.TotalRoomPrice,
+		SnackPrice:  inquiry.TotalSnackPrice,
 		TotalPrice:  inquiry.TotalPrice,
 	}
 
@@ -153,6 +154,11 @@ func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int
 		Notes:         inquiry.Notes,
 	})
 	if err != nil {
+		return nil, err
+	}
+
+	//Delete inquiry setelah berhasil
+	if err := u.inquiryRepo.DeleteInquiry(ctx, inquiryId, userId); err != nil {
 		return nil, err
 	}
 	reservationDetails, err := u.repo.GetReservationDetails(ctx, reservation.ID)

@@ -7,7 +7,6 @@ import (
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"errors"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -102,7 +101,6 @@ func (u *userUseCase) UpdateUser(ctx context.Context, id int, user *model.Update
 }
 
 func (u *userUseCase) Login(ctx context.Context, username string, password string) (string, *entity.User, error) {
-	secret := os.Getenv("JWT_SECRET")
 
 	//Check username exists
 	user, err := u.repo.GetByUsername(ctx, username)
@@ -124,10 +122,10 @@ func (u *userUseCase) Login(ctx context.Context, username string, password strin
 		"user_id":  user.ID,
 		"is_admin": user.IsAdmin,
 		"language": user.Language,
-		"exp":      time.Now().Add(12 * time.Hour).Unix(),
+		"exp":      time.Now().Add(6 * time.Hour).Unix(),
 	}
 
-	token, err := util.GenerateToken(secret, 24*time.Hour, claims)
+	token, err := util.GenerateToken(6*time.Hour, claims)
 	if err != nil {
 		return "", nil, err
 	}

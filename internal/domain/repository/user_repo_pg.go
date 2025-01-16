@@ -96,7 +96,7 @@ func (r *userRepo) CheckEmailExists(ctx context.Context, email string) (bool, er
 }
 
 func (r *userRepo) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
-	query := "SELECT id, username, email, password, is_admin, img_url, is_active, created_at, updated_at FROM users WHERE username = $1"
+	query := "SELECT id, username, email, password, is_admin, img_url, language, is_active, created_at, updated_at FROM users WHERE username = $1"
 	row := r.DB.QueryRowContext(ctx, query, username)
 	user := &entity.User{}
 
@@ -107,6 +107,7 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*entity.
 		&user.Password,
 		&user.IsAdmin,
 		&user.ImgUrl,
+		&user.Language,
 		&user.IsActive,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -136,4 +137,10 @@ func (r *userRepo) CheckUsernameExists(ctx context.Context, username string) (bo
 	}
 
 	return true, nil
+}
+
+func (r *userRepo) UpdatePassword(ctx context.Context, id int, password string) error {
+	query := "UPDATE users SET password = $1 WHERE id = $2"
+	_, err := r.DB.ExecContext(ctx, query, password, id)
+	return err
 }

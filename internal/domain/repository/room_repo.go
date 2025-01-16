@@ -39,7 +39,7 @@ INNER JOIN
 
 	// Filter berdasarkan name
 	if name != "" {
-		query += " AND name ILIKE $" + strconv.Itoa(argIndex)
+		query += " AND r.name ILIKE $" + strconv.Itoa(argIndex)
 		args = append(args, "%"+name+"%")
 		argIndex++
 	}

@@ -1,10 +1,10 @@
 {
   "database": {
-    "host": "autorack.proxy.rlwy.net",
-    "port": "19370",
+    "host": "localhost",
+    "port": "5432",
     "username": "postgres",
-    "password": "qOTUxXAnpkrSyotJrpxDCHFzUNkrzUno",
-    "dbname": "railway"
+    "password": "Bekasi2021$",
+    "dbname": "meetdb"
   },
   "jwt_secret_key": "JuySADi1uh9&sajTRC",
   "base_url": "http://localhost:8882"

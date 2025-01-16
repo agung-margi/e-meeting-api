@@ -4,13 +4,10 @@ import (
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/response"
 	"net/http"
-	"os"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
-
-var secret = os.Getenv("JWT_SECRET")
 
 func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -20,8 +17,16 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("Unauthorized"))
 		}
 
-		token, err := util.VerifyToken(secret, tokenString)
+		// Memeriksa apakah header Authorization dimulai dengan "Bearer "
+		if len(tokenString) < 7 || tokenString[:7] != "Bearer " {
+			return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("Invalid token format"))
+		}
 
+		// Mengambil token yang ada setelah "Bearer " (menghapus kata "Bearer " dari string)
+		tokenString = tokenString[7:]
+
+		// Verifikasi token
+		token, err := util.VerifyToken(tokenString)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("Unauthorized"))
 		}
@@ -33,7 +38,6 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		return c.JSON(http.StatusUnauthorized, response.UnauthorizedResponse("Unauthorized"))
-
 	}
 }
 

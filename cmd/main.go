@@ -6,6 +6,7 @@ import (
 	_ "e-meeting-api/presenter/handler/docs"
 
 	"github.com/labstack/echo/v4"
+	m "github.com/labstack/echo/v4/middleware"
 )
 
 // @title E-Meeting API
@@ -21,6 +22,11 @@ import (
 
 func main() {
 	e := echo.New()
+	e.Use(m.CORSWithConfig(m.CORSConfig{
+		AllowOrigins: []string{"*"}, // Mengizinkan semua asal (origin)
+		AllowMethods: []string{"*"}, // Mengizinkan semua metode HTTP
+		AllowHeaders: []string{"*"}, // Mengizinkan semua header
+	}))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

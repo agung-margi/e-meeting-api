@@ -55,3 +55,12 @@ func (r *inquiryRepo) GetByID(ctx context.Context, id int, userId int) (*entity.
 	}
 	return inquiry, nil
 }
+
+func (r *inquiryRepo) DeleteInquiry(ctx context.Context, id int, userId int) error {
+	query := "DELETE FROM inquiries WHERE id = $1 AND user_id = $2"
+	_, err := r.DB.ExecContext(ctx, query, id, userId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
