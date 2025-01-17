@@ -9,6 +9,8 @@ type UserHandler interface {
 	SaveUser(c echo.Context) error
 	UpdateUser(c echo.Context) error
 	Login(c echo.Context) error
+	ForgetPassword(c echo.Context) error
+	ResetPassword(c echo.Context) error
 }
 
 type ReservationHandler interface {

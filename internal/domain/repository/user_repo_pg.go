@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"e-meeting-api/internal/domain/entity"
 	"errors"
+	"time"
 )
 
 type userRepo struct {
@@ -95,6 +96,25 @@ func (r *userRepo) CheckEmailExists(ctx context.Context, email string) (bool, er
 	return true, nil
 }
 
+func (r *userRepo) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+	query := "SELECT id, username FROM users WHERE email = $1"
+	row := r.DB.QueryRowContext(ctx, query, email)
+	user := &entity.User{}
+
+	err := row.Scan(
+		&user.ID,
+		&user.Username,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (r *userRepo) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
 	query := "SELECT id, username, email, password, is_admin, img_url, language, is_active, created_at, updated_at FROM users WHERE username = $1"
 	row := r.DB.QueryRowContext(ctx, query, username)
@@ -143,4 +163,28 @@ func (r *userRepo) UpdatePassword(ctx context.Context, id int, password string) 
 	query := "UPDATE users SET password = $1 WHERE id = $2"
 	_, err := r.DB.ExecContext(ctx, query, password, id)
 	return err
+}
+
+func (r *userRepo) SaveResetToken(ctx context.Context, email string, token string, expiredAt time.Time) error {
+	query := "INSERT INTO reset_token (email, token,expired_at) VALUES ($1, $2, $3)"
+	_, err := r.DB.ExecContext(ctx, query, email, token, expiredAt)
+	return err
+}
+func (r *userRepo) DeleteResetToken(ctx context.Context, email string) error {
+	query := "DELETE FROM reset_token WHERE email = $1"
+	_, err := r.DB.ExecContext(ctx, query, email)
+	return err
+}
+
+func (r *userRepo) ValidateResetToken(ctx context.Context, email string, token string) (bool, error) {
+	query := "SELECT id FROM reset_token WHERE email = $1 AND token = $2 AND expired_at > now()"
+	var id int
+	err := r.DB.QueryRowContext(ctx, query, email, token).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil // Token not found
+		}
+		return false, err
+	}
+	return true, nil // Token is valid
 }

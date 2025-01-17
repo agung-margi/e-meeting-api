@@ -70,6 +70,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/forgot-password": {
+            "post": {
+                "description": "Melakukan forget password user berdasarkan email misalnya \"email\": \"6T9X5@example.com\"",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Forget password user",
+                "parameters": [
+                    {
+                        "description": "Forget Password Request",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ForgetPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "Melakukan login user berdasarkan username dan password misalnya \"username\": \"user1\", \"password\": \"password\"",
@@ -529,6 +575,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/reset-password/{token}": {
+            "post": {
+                "description": "Melakukan reset password user berdasarkan email, token, dan password misalnya \"email\": \"6T9X5@example.com\", \"token\": \"token\", \"password\": \"password\"",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Reset password user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Reset Password Token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User Email",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/room-schedule": {
             "get": {
                 "security": [
@@ -821,6 +925,12 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Capacity",
                         "name": "capacity",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Room Image",
+                        "name": "image",
                         "in": "formData"
                     }
                 ],
@@ -1131,6 +1241,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.ForgetPasswordRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
         "model.LoginRequest": {
             "type": "object",
             "required": [

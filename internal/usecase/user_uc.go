@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"context"
+	"e-meeting-api/configs"
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/pkg/util"
 	"e-meeting-api/presenter/model"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -131,4 +133,72 @@ func (u *userUseCase) Login(ctx context.Context, username string, password strin
 	}
 
 	return token, user, nil
+}
+
+func (u *userUseCase) GetResetPassword(ctx context.Context, email string) error {
+	//getname
+	user, err := u.repo.GetByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+
+	if user == nil {
+		return errors.New("email not found")
+	}
+
+	name := user.Username
+
+	token := util.GenerateRandomString(20)
+	expiredAt := time.Now().Add(30 * time.Minute)
+
+	err = u.repo.SaveResetToken(ctx, email, token, expiredAt)
+	if err != nil {
+		return err
+	}
+
+	baseURLFE := configs.AppConfig.BaseURLFE
+	resetLink := fmt.Sprintf("%s/reset-password/%s?email=%s", baseURLFE, token, email)
+
+	err = util.SendResetPasswordEmail(email, name, resetLink)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *userUseCase) ResetPassword(ctx context.Context, email string, token string, newPassword string) error {
+	// Validate the reset token
+	isValid, err := u.repo.ValidateResetToken(ctx, email, token)
+	if err != nil || !isValid {
+		return errors.New("Invalid or expired reset token")
+	}
+
+	// Fetch the user by email
+	user, err := u.repo.GetByEmail(ctx, email)
+	if err != nil {
+		return errors.New("Error fetching user data")
+	}
+	if user == nil {
+		return errors.New("User not found")
+	}
+
+	// Hash the new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("Failed to hash password")
+	}
+
+	// Update the password in the database
+	err = u.repo.UpdatePassword(ctx, user.ID, string(hashedPassword))
+	if err != nil {
+		return errors.New("Failed to update password")
+	}
+
+	// Delete the reset token
+	err = u.repo.DeleteResetToken(ctx, email)
+	if err != nil {
+		return errors.New("Failed to delete reset token")
+	}
+
+	return nil
 }

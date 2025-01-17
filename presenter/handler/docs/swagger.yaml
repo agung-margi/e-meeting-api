@@ -1,5 +1,10 @@
 basePath: /api/v1
 definitions:
+  model.ForgetPasswordRequest:
+    properties:
+      email:
+        type: string
+    type: object
   model.LoginRequest:
     properties:
       password:
@@ -115,6 +120,37 @@ paths:
       summary: Get dashboard data
       tags:
       - Dashboard
+  /forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: 'Melakukan forget password user berdasarkan email misalnya "email":
+        "6T9X5@example.com"'
+      parameters:
+      - description: Forget Password Request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.ForgetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Forget password user
+      tags:
+      - Authentication
   /login:
     post:
       consumes:
@@ -408,6 +444,46 @@ paths:
       summary: Get reservation schedules
       tags:
       - Reservation
+  /reset-password/{token}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Melakukan reset password user berdasarkan email, token, dan password
+        misalnya "email": "6T9X5@example.com", "token": "token", "password": "password"'
+      parameters:
+      - description: Reset Password Token
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: User Email
+        in: query
+        name: email
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Reset password user
+      tags:
+      - Authentication
   /room-schedule:
     get:
       consumes:
@@ -627,6 +703,10 @@ paths:
         in: formData
         name: capacity
         type: integer
+      - description: Room Image
+        in: formData
+        name: image
+        type: file
       produces:
       - application/json
       responses:

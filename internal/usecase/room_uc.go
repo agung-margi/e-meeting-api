@@ -66,3 +66,7 @@ func (u *roomUseCase) UpdateRoom(ctx context.Context, id int, roomRequest *model
 func (u *roomUseCase) DeleteRoom(ctx context.Context, id int) error {
 	return u.repo.DeleteRoom(ctx, id)
 }
+
+func (u *roomUseCase) GetByName(ctx context.Context, name string) (bool, error) {
+	return u.repo.RoomExists(ctx, name)
+}

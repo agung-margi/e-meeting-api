@@ -173,20 +173,15 @@ func (r *roomRepo) DeleteRoom(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *reservationRepo) GetReservationsCountByRoomAndDate(ctx context.Context, roomID int, date string) (int, error) {
-	query := `
-			SELECT COUNT(id)
-			FROM reservations 
-			WHERE room_id = $1 
-				AND DATE(start_time) = $2 
-				AND (status = 'booked' OR status = 'paid')
-	`
-
-	var count int
-	err := r.DB.QueryRowContext(ctx, query, roomID, date).Scan(&count)
+func (r *roomRepo) RoomExists(ctx context.Context, name string) (bool, error) {
+	query := "SELECT 1 FROM rooms WHERE name = $1 LIMIT 1"
+	var exists int
+	err := r.DB.QueryRowContext(ctx, query, name).Scan(&exists)
 	if err != nil {
-		return 0, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
 	}
-
-	return count, nil
+	return true, nil
 }

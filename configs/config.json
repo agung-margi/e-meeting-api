@@ -4,8 +4,17 @@
     "port": "5432",
     "username": "postgres",
     "password": "Bekasi2021$",
-    "dbname": "meetdb"
+    "dbname": "db1"
   },
   "jwt_secret_key": "JuySADi1uh9&sajTRC",
-  "base_url": "http://localhost:8882"
+  "base_url": "http://localhost:8882",
+  "port": "8882",
+  "base_url_fe": "http://localhost:5317",
+  "photos_path": "./public/photos/",
+  "email_config": {
+    "host": "mail.agungmargi.my.id",
+    "port": "587",
+    "username": "sinau@agungmargi.my.id",
+    "password": "Ul4N6@HO7^9G"
+  }
 }

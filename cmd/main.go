@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"e-meeting-api/configs"
 	"e-meeting-api/presenter/handler"
 	_ "e-meeting-api/presenter/handler/docs"
 
@@ -21,6 +22,7 @@ import (
 // @Name Authorization
 
 func main() {
+	configs.LoadConfig()
 	e := echo.New()
 	e.Use(m.CORSWithConfig(m.CORSConfig{
 		AllowOrigins: []string{"*"}, // Mengizinkan semua asal (origin)
@@ -31,9 +33,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	e.Static("/photos", "/public/photos")
+	e.Static("/photos", configs.AppConfig.PhotosPath)
 	v1 := e.Group("/api/v1")
-
 	if err := handler.RoutingRestAPI(v1, e.Logger, ctx); err != nil {
 		e.Logger.Fatal(err)
 	}

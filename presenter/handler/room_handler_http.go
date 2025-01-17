@@ -119,6 +119,20 @@ func (h *roomHandler) SaveRoom(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request body"))
 	}
 
+	if room.Name == "" || room.RoomTypeId == 0 || room.Price == 0 || room.Capacity == 0 {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("missing required fields"))
+	}
+
+	roomExist, _ := h.roomUseCase.GetByName(c.Request().Context(), room.Name)
+
+	if roomExist == true {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("room name already exists"))
+	}
+
+	if room.RoomTypeId < 1 || room.RoomTypeId > 3 {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid room type"))
+	}
+
 	file, err := c.FormFile("image")
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid file"))
@@ -138,7 +152,7 @@ func (h *roomHandler) SaveRoom(c echo.Context) error {
 	// Jika file ada, proses upload
 	ext := filepath.Ext(file.Filename)
 	randomFileName := util.GenerateRandomString(25) + ext
-	uploadPath := "public/photos/" + randomFileName
+	uploadPath := configs.AppConfig.PhotosPath + randomFileName
 
 	err = util.SaveUploadedFile(file, uploadPath)
 	if err != nil {
@@ -194,6 +208,7 @@ func (h *roomHandler) GetRoom(c echo.Context) error {
 // @Param room_type_id formData int false "Room Type ID"
 // @Param price formData int false "Price"
 // @Param capacity formData int false "Capacity"
+// @Param image formData file false "Room Image"
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 404 {object} response.APIResponse
@@ -244,7 +259,7 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 		// Jika file ada, proses upload
 		ext := filepath.Ext(file.Filename)
 		randomFileName := util.GenerateRandomString(25) + ext
-		uploadPath := "public/photos/" + randomFileName
+		uploadPath := configs.AppConfig.PhotosPath + randomFileName
 
 		err = util.SaveUploadedFile(file, uploadPath)
 		if err != nil {
@@ -252,7 +267,7 @@ func (h *roomHandler) UpdateRoom(c echo.Context) error {
 		}
 
 		if oldRoom.ImgUrl != "" {
-			oldFilePath := strings.Replace(oldRoom.ImgUrl, os.Getenv("BASE_URL")+"/photos/", "public/photos/", 1)
+			oldFilePath := strings.Replace(oldRoom.ImgUrl, configs.AppConfig.BaseURL+"/photos/", configs.AppConfig.PhotosPath, 1)
 			if err := os.Remove(oldFilePath); err != nil {
 				return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to remove old image"))
 			}

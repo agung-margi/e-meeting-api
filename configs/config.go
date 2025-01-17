@@ -35,4 +35,14 @@ type Config struct {
 	Database     DatabaseConfig `json:"database"`
 	JWTSecretKey string         `json:"jwt_secret_key"`
 	BaseURL      string         `json:"base_url"`
+	EmailConfig  EmailConfig    `json:"email_config"`
+	BaseURLFE    string         `json:"base_url_fe"`
+	PhotosPath   string         `json:"photos_path"`
+}
+
+type EmailConfig struct {
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	User     string `json:"username"`
+	Password string `json:"password"`
 }

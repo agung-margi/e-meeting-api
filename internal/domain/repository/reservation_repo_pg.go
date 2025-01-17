@@ -56,7 +56,7 @@ func (r *reservationRepo) CheckAvailability(ctx context.Context, roomId int, sta
 }
 func (r *reservationRepo) GetReservationsByRoomAndDate(ctx context.Context, roomID int, date string) ([]entity.RoomSchedule, error) {
 	query := `
-			SELECT r.id, r.room_id, rm.name, r.start_time, r.end_time 
+			SELECT r.id, r.room_id, rm.name, r.booking_date, r.start_time, r.end_time, r.status
 FROM reservations r
 JOIN rooms rm ON r.room_id = rm.id
 WHERE r.room_id = $1
@@ -73,7 +73,7 @@ WHERE r.room_id = $1
 	reservations := make([]entity.RoomSchedule, 0)
 	for rows.Next() {
 		reservation := &entity.RoomSchedule{}
-		if err := rows.Scan(&reservation.ID, &reservation.RoomID, &reservation.RoomName, &reservation.StartTime, &reservation.EndTime); err != nil {
+		if err := rows.Scan(&reservation.ID, &reservation.RoomID, &reservation.RoomName, &reservation.BookingDate, &reservation.StartTime, &reservation.EndTime, &reservation.Status); err != nil {
 			return nil, err
 		}
 		reservations = append(reservations, *reservation)
@@ -520,4 +520,22 @@ func (r *reservationRepo) GetExpiredReservations(ctx context.Context, now time.T
 	}
 
 	return expiredReservations, nil
+}
+
+func (r *reservationRepo) GetReservationsCountByRoomAndDate(ctx context.Context, roomID int, date string) (int, error) {
+	query := `
+			SELECT COUNT(id)
+			FROM reservations 
+			WHERE room_id = $1 
+				AND DATE(start_time) = $2 
+				AND (status = 'booked' OR status = 'paid')
+	`
+
+	var count int
+	err := r.DB.QueryRowContext(ctx, query, roomID, date).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

@@ -33,3 +33,13 @@ func (u *UpdateUserRequest) Validate() error {
 	validate := validator.New()
 	return validate.Struct(u)
 }
+
+type ResetPasswordRequest struct {
+	Email    string `json:"email"`
+	Token    string `json:"token"`
+	Password string `json:"password"`
+}
+
+type ForgetPasswordRequest struct {
+	Email string `json:"email"`
+}

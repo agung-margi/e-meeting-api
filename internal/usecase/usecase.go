@@ -12,6 +12,8 @@ type UserUseCase interface {
 	SaveUser(ctx context.Context, user *model.UserRequest) error
 	UpdateUser(ctx context.Context, id int, user *model.UpdateUserRequest) error
 	Login(ctx context.Context, username string, password string) (string, *entity.User, error)
+	GetResetPassword(ctx context.Context, email string) error
+	ResetPassword(ctx context.Context, email string, token string, newPassword string) error
 }
 
 type ReservationUseCase interface {
@@ -44,6 +46,7 @@ type RoomUseCase interface {
 	SaveRoom(ctx context.Context, room *model.RoomRequest) error
 	UpdateRoom(ctx context.Context, id int, room *model.RoomRequest) error
 	DeleteRoom(ctx context.Context, id int) error
+	GetByName(ctx context.Context, name string) (bool, error)
 }
 
 type InquiryUsecase interface {

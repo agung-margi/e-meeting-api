@@ -193,7 +193,7 @@ func (h *userHandler) UpdateUser(c echo.Context) error {
 		// Proses upload file
 		ext := filepath.Ext(file.Filename)
 		randomFileName := util.GenerateRandomString(25) + ext
-		uploadPath := "public/photos/" + randomFileName
+		uploadPath := configs.AppConfig.PhotosPath + randomFileName
 
 		err = util.SaveUploadedFile(file, uploadPath)
 		if err != nil {
@@ -205,7 +205,7 @@ func (h *userHandler) UpdateUser(c echo.Context) error {
 
 		// Hapus gambar lama jika ada
 		if oldUser.ImgUrl != "" {
-			oldFilePath := strings.Replace(oldUser.ImgUrl, os.Getenv("BASE_URL")+"/photos/", "public/photos/", 1)
+			oldFilePath := strings.Replace(oldUser.ImgUrl, baseURL+"/photos/", configs.AppConfig.PhotosPath, 1)
 			if err := os.Remove(oldFilePath); err != nil {
 				return c.JSON(http.StatusInternalServerError, response.InternalServerErrorResponse("failed to delete old image"))
 			}
@@ -265,4 +265,63 @@ func (h *userHandler) Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.SuccessResponse("success login", map[string]interface{}{
 		"token": token,
 	}))
+}
+
+// ForgetPassword
+// @Summary Forget password user
+// @Description Melakukan forget password user berdasarkan email misalnya "email": "6T9X5@example.com"
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param user body model.ForgetPasswordRequest true "Forget Password Request"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /forgot-password [post]
+func (h *userHandler) ForgetPassword(c echo.Context) error {
+	req := &model.ForgetPasswordRequest{}
+
+	if err := c.Bind(req); err != nil {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid request data"))
+	}
+	err := h.useCase.GetResetPassword(context.Background(), req.Email)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse(err.Error(), http.StatusInternalServerError))
+	}
+
+	return c.JSON(http.StatusOK, response.SuccessResponse("success send link reset password", nil))
+}
+
+// ResetPassword
+// @Summary Reset password user
+// @Description Melakukan reset password user berdasarkan email, token, dan password misalnya "email": "6T9X5@example.com", "token": "token", "password": "password"
+// @Tags Authentication
+// @Accept multipart/form-data
+// @Produce json
+// @Param token path string true "Reset Password Token"
+// @Param email query string true "User Email"
+// @Param password formData string true "Password"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /reset-password/{token} [post]
+func (h *userHandler) ResetPassword(c echo.Context) error {
+
+	req := &model.ResetPasswordRequest{
+		Email:    c.QueryParam("email"),
+		Token:    c.Param("token"),
+		Password: c.FormValue("password"),
+	}
+	// Check if the necessary fields are provided
+	if req.Email == "" || req.Token == "" || req.Password == "" {
+		return c.JSON(http.StatusBadRequest, response.ErrorResponse("Missing required fields", http.StatusBadRequest))
+	}
+
+	// Call the use case to reset the password
+	err := h.useCase.ResetPassword(context.Background(), req.Email, req.Token, req.Password)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse(err.Error(), http.StatusInternalServerError))
+	}
+
+	return c.JSON(http.StatusOK, response.SuccessResponse("Password updated successfully", nil))
 }

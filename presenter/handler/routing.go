@@ -42,7 +42,8 @@ func RoutingRestAPI(g *echo.Group, logger echo.Logger, ctx context.Context) erro
 	g.POST("/register", userHandler.SaveUser)
 	g.GET("/users/:id", userHandler.GetUser, middleware.AuthMiddleware)
 	g.PUT("/users/:id", userHandler.UpdateUser, middleware.AuthMiddleware)
-
+	g.POST("/forgot-password", userHandler.ForgetPassword)
+	g.POST("/reset-password/:token", userHandler.ResetPassword)
 	// Routing API Snack
 	snackRepo := repository.NewSnackRepository(db)
 	snackUsecase := usecase.NewSnackUseCase(snackRepo)

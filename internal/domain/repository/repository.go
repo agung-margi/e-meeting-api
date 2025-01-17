@@ -10,11 +10,15 @@ import (
 type UserRepository interface {
 	GetByID(ctx context.Context, id int) (*entity.User, error)
 	GetByUsername(ctx context.Context, username string) (*entity.User, error)
+	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	SaveUser(ctx context.Context, user *entity.User) error
 	UpdateUser(ctx context.Context, id int, user *entity.User) error
 	CheckEmailExists(ctx context.Context, email string) (bool, error)
 	CheckUsernameExists(ctx context.Context, username string) (bool, error)
+	SaveResetToken(ctx context.Context, email string, token string, expiredAt time.Time) error
+	DeleteResetToken(ctx context.Context, email string) error
 	UpdatePassword(ctx context.Context, id int, password string) error
+	ValidateResetToken(ctx context.Context, email string, token string) (bool, error)
 }
 
 type SnackRepository interface {
@@ -35,6 +39,7 @@ type RoomRepository interface {
 	SaveRoom(ctx context.Context, room *entity.Room) error
 	UpdateRoom(ctx context.Context, id int, room *entity.Room) error
 	DeleteRoom(ctx context.Context, id int) error
+	RoomExists(ctx context.Context, name string) (bool, error)
 }
 
 type ReservationRepository interface {

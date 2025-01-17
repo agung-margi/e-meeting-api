@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS reservation_details;
+DROP TABLE IF EXISTS reservation_details CASCADE;
