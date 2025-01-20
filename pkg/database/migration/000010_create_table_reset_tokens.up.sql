@@ -1,4 +1,4 @@
-CREATE TABLE reset_token (
+CREATE TABLE reset_tokens (
     id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
     email varchar(100) NOT NULL,
     token varchar(255) NOT NULL,

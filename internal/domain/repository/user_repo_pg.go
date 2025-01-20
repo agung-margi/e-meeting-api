@@ -166,18 +166,18 @@ func (r *userRepo) UpdatePassword(ctx context.Context, id int, password string) 
 }
 
 func (r *userRepo) SaveResetToken(ctx context.Context, email string, token string, expiredAt time.Time) error {
-	query := "INSERT INTO reset_token (email, token,expired_at) VALUES ($1, $2, $3)"
+	query := "INSERT INTO reset_tokens (email, token,expired_at) VALUES ($1, $2, $3)"
 	_, err := r.DB.ExecContext(ctx, query, email, token, expiredAt)
 	return err
 }
 func (r *userRepo) DeleteResetToken(ctx context.Context, email string) error {
-	query := "DELETE FROM reset_token WHERE email = $1"
+	query := "DELETE FROM reset_tokens WHERE email = $1"
 	_, err := r.DB.ExecContext(ctx, query, email)
 	return err
 }
 
 func (r *userRepo) ValidateResetToken(ctx context.Context, email string, token string) (bool, error) {
-	query := "SELECT id FROM reset_token WHERE email = $1 AND token = $2 AND expired_at > now()"
+	query := "SELECT id FROM reset_tokens WHERE email = $1 AND token = $2 AND expired_at > now()"
 	var id int
 	err := r.DB.QueryRowContext(ctx, query, email, token).Scan(&id)
 	if err != nil {

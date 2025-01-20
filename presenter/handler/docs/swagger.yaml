@@ -120,6 +120,37 @@ paths:
       summary: Get dashboard data
       tags:
       - Dashboard
+  /forget-password:
+    post:
+      consumes:
+      - application/json
+      description: 'Melakukan lupa password user berdasarkan email misalnya "email":
+        "6T9X5@example.com" untuk mendapatkan link reset password'
+      parameters:
+      - description: ResetPassword Request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.ForgetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Forget password user
+      tags:
+      - Authentication
   /login:
     post:
       consumes:
@@ -413,37 +444,6 @@ paths:
       summary: Get reservation schedules
       tags:
       - Reservation
-  /reset-password:
-    post:
-      consumes:
-      - application/json
-      description: 'Melakukan reset password user berdasarkan email misalnya "email":
-        "6T9X5@example.com" untuk mendapatkan link reset password'
-      parameters:
-      - description: ResetPassword Request
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/model.ForgetPasswordRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-      summary: Reset password user
-      tags:
-      - Authentication
   /reset-password/{token}:
     post:
       consumes:

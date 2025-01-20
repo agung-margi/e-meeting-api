@@ -267,9 +267,9 @@ func (h *userHandler) Login(c echo.Context) error {
 	}))
 }
 
-// ResetPassword
-// @Summary Reset password user
-// @Description Melakukan reset password user berdasarkan email misalnya "email": "6T9X5@example.com" untuk mendapatkan link reset password
+// ForgetPassword
+// @Summary Forget password user
+// @Description Melakukan lupa password user berdasarkan email misalnya "email": "6T9X5@example.com" untuk mendapatkan link reset password
 // @Tags Authentication
 // @Accept json
 // @Produce json
@@ -277,7 +277,7 @@ func (h *userHandler) Login(c echo.Context) error {
 // @Success 200 {object} response.APIResponse
 // @Failure 400 {object} response.APIResponse
 // @Failure 500 {object} response.APIResponse
-// @Router /reset-password [post]
+// @Router /forget-password [post]
 func (h *userHandler) ForgetPassword(c echo.Context) error {
 	req := &model.ForgetPasswordRequest{}
 
