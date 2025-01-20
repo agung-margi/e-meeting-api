@@ -4,12 +4,12 @@
     "port": "5432",
     "username": "postgres",
     "password": "Bekasi2021$",
-    "dbname": "db1"
+    "dbname": "db3"
   },
   "jwt_secret_key": "JuySADi1uh9&sajTRC",
   "base_url": "http://localhost:8882",
   "port": "8882",
-  "base_url_fe": "http://localhost:5317",
+  "base_url_fe": "http://localhost:5173",
   "photos_path": "./public/photos/",
   "email_config": {
     "host": "mail.agungmargi.my.id",

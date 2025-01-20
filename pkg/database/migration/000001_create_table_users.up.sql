@@ -1,7 +1,7 @@
 CREATE TABLE users(
     id SERIAL NOT NULL,
     username varchar(100) NOT NULL,
-    email varchar(100) NOT NULL,
+    email varchar(100) NOT NULL UNIQUE,
     password varchar(255) NOT NULL,
     is_admin boolean DEFAULT false,
     img_url varchar(255) NULL,
