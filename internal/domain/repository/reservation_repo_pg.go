@@ -6,6 +6,7 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -56,12 +57,13 @@ func (r *reservationRepo) CheckAvailability(ctx context.Context, roomId int, sta
 }
 func (r *reservationRepo) GetReservationsByRoomAndDate(ctx context.Context, roomID int, date string) ([]entity.RoomSchedule, error) {
 	query := `
-			SELECT r.id, r.room_id, rm.name, r.booking_date, r.start_time, r.end_time, r.status
+			SELECT r.id, r.room_id, rm.name, rd.company, r.booking_date, r.start_time, r.end_time, r.status
 FROM reservations r
 JOIN rooms rm ON r.room_id = rm.id
+JOIN reservation_details rd ON r.id = rd.reservation_id
 WHERE r.room_id = $1
   AND DATE(r.start_time) = $2
-  AND (r.status = 'booked' OR r.status = 'paid')
+  AND (r.status = 'paid')
 	`
 
 	rows, err := r.DB.QueryContext(ctx, query, roomID, date)
@@ -73,7 +75,7 @@ WHERE r.room_id = $1
 	reservations := make([]entity.RoomSchedule, 0)
 	for rows.Next() {
 		reservation := &entity.RoomSchedule{}
-		if err := rows.Scan(&reservation.ID, &reservation.RoomID, &reservation.RoomName, &reservation.BookingDate, &reservation.StartTime, &reservation.EndTime, &reservation.Status); err != nil {
+		if err := rows.Scan(&reservation.ID, &reservation.RoomID, &reservation.RoomName, &reservation.Company, &reservation.BookingDate, &reservation.StartTime, &reservation.EndTime, &reservation.Status); err != nil {
 			return nil, err
 		}
 		reservations = append(reservations, *reservation)
@@ -107,7 +109,7 @@ func (r *reservationRepo) GetRoomPriceByID(ctx context.Context, roomID int) (int
 	return price, nil
 }
 func (r *reservationRepo) Save(ctx context.Context, reservation *entity.Reservation, details *entity.ReservationDetails) (*entity.Reservation, error) {
-	query := "INSERT INTO reservations (user_id, room_id, start_time, end_time, booking_date, room_price, snack_price, total_price, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now(), now()) RETURNING id"
+	query := "INSERT INTO reservations (user_id, room_id, start_time, end_time, booking_date, room_price, snack_price, total_price, status, created_at, updated_at, expired_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id"
 	row := r.DB.QueryRowContext(ctx, query,
 		reservation.UserID,
 		reservation.RoomID,
@@ -117,8 +119,12 @@ func (r *reservationRepo) Save(ctx context.Context, reservation *entity.Reservat
 		reservation.RoomPrice,
 		reservation.SnackPrice,
 		reservation.TotalPrice,
-		"booked",
+		reservation.Status,
+		reservation.CreatedAt,
+		reservation.UpdatedAt,
+		reservation.ExpiredAt,
 	)
+
 	if err := row.Scan(&reservation.ID); err != nil {
 		return nil, err
 	}
@@ -181,7 +187,7 @@ func (r *reservationRepo) GetByUserID(ctx context.Context, userID int) ([]*entit
 	return reservations, nil
 }
 
-func (r *reservationRepo) GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error) {
+func (r *reservationRepo) GetAll(ctx context.Context, startDate, endDate string, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error) {
 	query := `
 		SELECT
 		r.id,
@@ -200,15 +206,20 @@ JOIN
 ON
     rm.room_type_id = rt.id
 WHERE
-    ($1::timestamp IS NULL OR r.start_time >= $1::timestamp)
-    AND ($2::timestamp IS NULL OR r.end_time <= $2::timestamp)
+   ($1::date IS NULL OR r.booking_date::date >= $1::date)
+    AND ($2::date IS NULL OR r.booking_date::date <= $2::date)
     AND ($3::int = 0 OR rm.room_type_id = $3::int)
     AND ($4::text = '' OR r.status = $4::text)
-		AND ($5::int IS NULL OR r.user_id = $5::int)
+    AND ($5::int IS NULL OR r.user_id = $5::int)
 		`
 	// Handle parameter nil
 	var params []interface{}
 	params = append(params, startDate, endDate, roomType, status, userID)
+
+	// Debugging: print query dan params yang digunakan
+	fmt.Println("Executing query:", query)
+	fmt.Println("With params:", params)
+
 	rows, err := r.DB.QueryContext(ctx, query, params...)
 	if err != nil {
 		return nil, err
@@ -240,6 +251,7 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 			r.user_id AS user_id,
 			rm.id AS room_id,
 			rm.name AS room_name,
+			rt.name AS room_type,
 			rm.capacity AS room_capacity,
 			rm.price AS room_price,
 
@@ -272,6 +284,8 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 		JOIN 
 			rooms rm ON r.room_id = rm.id
 		JOIN 
+			room_types rt ON rm.room_type_id = rt.id
+		JOIN 
 			reservation_details rd ON r.id = rd.reservation_id
 		LEFT JOIN 
 			snacks s ON rd.snack_id = s.id
@@ -287,7 +301,7 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 	// Variables to hold query results
 	var (
 		roomID, roomCapacity, roomPrice, participants, snackID, snackPrice, totalPrice, totalRoomPrice, totalSnackPrice int
-		roomName, customerName, customerPhone, companyName, snackCategory, snackName, notes                             string
+		roomName, roomType, customerName, customerPhone, companyName, snackCategory, snackName, notes                   string
 		userID                                                                                                          int
 		dateReservation, startDate, endDate, createdAt, updatedAt, expiredAt                                            time.Time
 	)
@@ -295,7 +309,7 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 	// Scan the results from the query
 	err := row.Scan(
 		&userID,
-		&roomID, &roomName, &roomCapacity, &roomPrice,
+		&roomID, &roomName, &roomType, &roomCapacity, &roomPrice,
 		&customerName, &customerPhone, &companyName, &dateReservation, &startDate, &endDate, &participants,
 		&snackID, &snackCategory, &snackName, &snackPrice,
 		&totalPrice, &totalRoomPrice, &totalSnackPrice,
@@ -313,6 +327,7 @@ func (r *reservationRepo) GetReservationDetails(ctx context.Context, reservation
 		{
 			RoomID:    roomID,
 			RoomName:  roomName,
+			RoomType:  roomType,
 			Capacity:  roomCapacity,
 			RoomPrice: roomPrice,
 		},

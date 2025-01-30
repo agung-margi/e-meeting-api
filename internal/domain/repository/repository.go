@@ -50,7 +50,7 @@ type ReservationRepository interface {
 	GetRoomPriceByID(ctx context.Context, roomID int) (int, error)
 	GetSnackPriceByID(ctx context.Context, snackID int) (int, error)
 	GetReservationDetails(ctx context.Context, reservationID int) (*[]model.ReservationDetailsResponse, error)
-	GetAll(ctx context.Context, startDate, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error)
+	GetAll(ctx context.Context, startDate, endDate string, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error)
 	UpdateStatus(ctx context.Context, id int, status string) error
 	GetReservationsCountByRoomAndDate(ctx context.Context, roomID int, date string) (int, error)
 	GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error)

@@ -3,6 +3,7 @@ package handler
 import (
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/presenter/response"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -233,21 +234,22 @@ func (h *reservationHandler) GetReservations(c echo.Context) error {
 		filterUserID = &userIDIntConverted
 	}
 
-	var startDate, endDate *time.Time
-	if startDateStr != "" {
-		parsedStartDate, err := time.Parse("2006-01-02", startDateStr)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid start_date format"))
-		}
-		startDate = &parsedStartDate
-	}
-	if endDateStr != "" {
-		parsedEndDate, err := time.Parse("2006-01-02", endDateStr)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid end_date format"))
-		}
-		endDate = &parsedEndDate
-	}
+	// // var startDate, endDate *time.Time
+	// if startDateStr != "" {
+	// 	parsedStartDate, err := time.Parse("2006-01-02", startDateStr)
+	// 	if err != nil {
+	// 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid start_date format"))
+	// 	}
+	// 	startDate = &parsedStartDate
+	// }
+	// if endDateStr != "" {
+	// 	parsedEndDate, err := time.Parse("2006-01-02", endDateStr)
+	// 	if err != nil {
+	// 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid end_date format"))
+	// 	}
+	// 	endDate = &parsedEndDate
+	// }
+
 	roomTypeInt := 0
 
 	if roomType != "" {
@@ -261,7 +263,7 @@ func (h *reservationHandler) GetReservations(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid status"))
 	}
 
-	reservations, err := h.useCase.GetAll(c.Request().Context(), startDate, endDate, roomTypeInt, status, filterUserID)
+	reservations, err := h.useCase.GetAll(c.Request().Context(), startDateStr, endDateStr, roomTypeInt, status, filterUserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.ErrorResponse(err.Error(), http.StatusInternalServerError))
 	}
@@ -402,4 +404,100 @@ func (h *reservationHandler) GetDashboardData(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response.SuccessResponse("success get dashboard data", dashboardData))
+}
+
+// ExportReservations
+// @Summary Export reservations
+// @Description Export reservations
+// @Tags Reservation
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param start_date query string false "Start date"
+// @Param end_date query string false "End date"
+// @Param room_type query string false "Room type"
+// @Param status query string false "Status"
+// @Success 200 {object} response.APIResponse
+// @Failure 400 {object} response.APIResponse
+// @Failure 500 {object} response.APIResponse
+// @Router /reservations/export [get]
+func (h *reservationHandler) ExportReservations(c echo.Context) error {
+
+	// Ambil query parameter
+	startDateStr := c.QueryParam("start_date")
+	endDateStr := c.QueryParam("end_date")
+	roomType := c.QueryParam("room_type")
+	status := c.QueryParam("status")
+
+	userID := c.Get("user_id")
+	isAdmin := c.Get("is_admin")
+
+	if userID == nil || isAdmin == nil {
+		return c.JSON(http.StatusUnauthorized, response.ErrorResponse("User not authenticated", http.StatusUnauthorized))
+	}
+
+	userIDInt, ok := userID.(float64)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, response.ErrorResponse("User not authenticated", http.StatusUnauthorized))
+	}
+
+	isAdminBool, ok := isAdmin.(bool)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, response.ErrorResponse("User not authenticated", http.StatusUnauthorized))
+	}
+
+	var filterUserID *int
+	if !isAdminBool {
+		userIDIntConverted := int(userIDInt)
+		filterUserID = &userIDIntConverted
+	}
+
+	var startDate, endDate *time.Time
+
+	if startDateStr != "" {
+		parsedStartDate, err := time.Parse("2006-01-02", startDateStr)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid start_date format"))
+		}
+		startDate = &parsedStartDate
+	}
+	if endDateStr != "" {
+		parsedEndDate, err := time.Parse("2006-01-02", endDateStr)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid end_date format"))
+		}
+		endDate = &parsedEndDate
+	}
+	if startDate != nil && endDate != nil && startDate.After(*endDate) {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("start_date must be before end_date"))
+	}
+
+	roomTypeInt := 0
+
+	if roomType != "" {
+		var err error
+		roomTypeInt, err = strconv.Atoi(roomType)
+		if err != nil || roomTypeInt < 0 {
+			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid room_type"))
+		}
+	}
+	if status != "" && status != "paid" && status != "booked" && status != "cancel" {
+		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid status"))
+	}
+
+	excelFile, err := h.useCase.ExportReservations(c.Request().Context(), startDateStr, endDateStr, roomTypeInt, status, filterUserID)
+	fmt.Println(startDateStr, endDateStr, roomTypeInt, status, filterUserID)
+	if err != nil {
+		if err.Error() == "reservations not found" {
+			return c.JSON(http.StatusNotFound, response.NotFoundResponse("reservations not found"))
+		}
+		return c.JSON(http.StatusInternalServerError, response.ErrorResponse(err.Error(), http.StatusInternalServerError))
+	}
+
+	// Set header untuk download file Excel
+	c.Response().Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Response().Header().Set("Content-Disposition", `attachment; filename="reservations.xlsx"`)
+
+	// Tulis file ke response
+	return excelFile.Write(c.Response().Writer)
 }

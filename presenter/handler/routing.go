@@ -91,6 +91,7 @@ func RoutingRestAPI(g *echo.Group, logger echo.Logger, ctx context.Context) erro
 	g.GET("/room-schedule", reservationHandler.GetRoomSchedule, middleware.AuthMiddleware)
 	g.GET("/reservations/schedules", reservationHandler.GetSchedules, middleware.AuthMiddleware)
 	g.GET("/dashboard", reservationHandler.GetDashboardData, middleware.AuthMiddleware, middleware.IsAdminMiddleware)
+	g.GET("/reservations/export", reservationHandler.ExportReservations, middleware.AuthMiddleware)
 	//
 
 	return nil

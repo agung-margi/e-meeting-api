@@ -5,6 +5,8 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
 	"time"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type UserUseCase interface {
@@ -20,13 +22,14 @@ type ReservationUseCase interface {
 	GetReservation(ctx context.Context, reservationID int) (*[]model.ReservationDetailsResponse, error)
 	Save(ctx context.Context, inquiryId int, userId int) (*[]model.ReservationDetailsResponse, error)
 	GetReservationsByRoomAndDate(ctx context.Context, roomId int, date string) ([]entity.RoomSchedule, error)
-	GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error)
+	GetAll(ctx context.Context, startDate string, endDate string, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error)
 	PayReservation(ctx context.Context, id int, userId int, isAdmin bool) error
 	CancelReservation(ctx context.Context, id int, userId int, isAdmin bool) error
 	GetSchedulesByDateRange(ctx context.Context, startDate, endDate time.Time) ([]entity.RoomSchedule, error)
 	GetDashboardData(ctx context.Context, startDate, endDate time.Time) (entity.Dashboard, error)
 	ExpireReservations(ctx context.Context) error
 	StartExpiredReservationWorker(ctx context.Context)
+	ExportReservations(ctx context.Context, startDate string, endDate string, roomType int, status string, userID *int) (*excelize.File, error)
 }
 
 type SnackUseCase interface {

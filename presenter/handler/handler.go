@@ -22,6 +22,7 @@ type ReservationHandler interface {
 	GetRoomSchedule(c echo.Context) error
 	GetSchedules(c echo.Context) error
 	GetDashboardData(c echo.Context) error
+	ExportReservations(c echo.Context) error
 }
 
 type SnackHandler interface {

@@ -6,8 +6,11 @@ import (
 	"e-meeting-api/internal/domain/repository"
 	"e-meeting-api/presenter/model"
 	"errors"
+	"fmt"
 	"log"
 	"time"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type reservationUseCase struct {
@@ -141,6 +144,10 @@ func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int
 		RoomPrice:   inquiry.TotalRoomPrice,
 		SnackPrice:  inquiry.TotalSnackPrice,
 		TotalPrice:  inquiry.TotalPrice,
+		Status:      "booked",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		ExpiredAt:   time.Now().Add(24 * time.Hour),
 	}
 
 	// Panggil fungsi Save pada repository
@@ -153,6 +160,7 @@ func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int
 		Participants:  inquiry.Participants,
 		Notes:         inquiry.Notes,
 	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +175,7 @@ func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int
 	}
 	return reservationDetails, nil
 }
-func (u *reservationUseCase) GetAll(ctx context.Context, startDate *time.Time, endDate *time.Time, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error) {
+func (u *reservationUseCase) GetAll(ctx context.Context, startDate string, endDate string, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error) {
 	reservations, err := u.repo.GetAll(ctx, startDate, endDate, roomType, status, userID)
 	if err != nil {
 		return nil, err
@@ -245,4 +253,59 @@ func (u *reservationUseCase) StartExpiredReservationWorker(ctx context.Context) 
 			return
 		}
 	}
+}
+
+func (u *reservationUseCase) ExportReservations(ctx context.Context, startDate string, endDate string, roomType int, status string, userID *int) (*excelize.File, error) {
+
+	// if startDate == nil || endDate == nil {
+	// 	return nil, fmt.Errorf("start_date and end_date are required")
+	// }
+	// if startDate.After(*endDate) {
+	// 	return nil, fmt.Errorf("start_date must be before end_date")
+	// }
+
+	// Validasi status yang diperbolehkan
+	if status != "" && status != "paid" && status != "booked" && status != "cancel" {
+		return nil, fmt.Errorf("invalid status")
+	}
+
+	// Ambil data reservasi dari database
+	reservations, err := u.repo.GetAll(ctx, startDate, endDate, roomType, status, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("reservations: %v\n", startDate, endDate, roomType, status, userID)
+
+	if reservations == nil {
+		return nil, fmt.Errorf("reservations not found")
+	}
+
+	// Buat file Excel
+
+	f := excelize.NewFile()
+	sheetName := "Reservations"
+	f.SetSheetName("Sheet1", sheetName)
+
+	// Header kolom
+	headers := []string{"Booking Date", "Room Name", "Room Type", "Status"}
+	for i, header := range headers {
+		cell := fmt.Sprintf("%c1", 'A'+i)
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	// Data reservasi
+	for i, reservation := range reservations {
+		row := i + 2
+		bookingDate, err := time.Parse("2006-01-02T15:04:05Z", reservation.BookingDate)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse booking date: %v", err)
+		}
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), bookingDate.Format("2006-01-02"))
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), reservation.RoomName)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), reservation.RoomType)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), reservation.Status)
+	}
+
+	return f, nil
 }

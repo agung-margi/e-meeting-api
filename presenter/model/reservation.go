@@ -45,6 +45,7 @@ type ReservationDetailsResponse struct {
 type RoomDetailsResponse struct {
 	RoomID    int    `json:"roomId"`
 	RoomName  string `json:"roomName"`
+	RoomType  string `json:"roomType"`
 	Capacity  int    `json:"capacity"`
 	RoomPrice int    `json:"roomPrice"`
 }
