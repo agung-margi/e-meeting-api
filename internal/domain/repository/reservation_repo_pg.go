@@ -6,7 +6,6 @@ import (
 	"e-meeting-api/internal/domain/entity"
 	"e-meeting-api/presenter/model"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -215,10 +214,6 @@ WHERE
 	// Handle parameter nil
 	var params []interface{}
 	params = append(params, startDate, endDate, roomType, status, userID)
-
-	// Debugging: print query dan params yang digunakan
-	fmt.Println("Executing query:", query)
-	fmt.Println("With params:", params)
 
 	rows, err := r.DB.QueryContext(ctx, query, params...)
 	if err != nil {

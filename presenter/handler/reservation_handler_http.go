@@ -3,7 +3,6 @@ package handler
 import (
 	"e-meeting-api/internal/usecase"
 	"e-meeting-api/presenter/response"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -486,7 +485,6 @@ func (h *reservationHandler) ExportReservations(c echo.Context) error {
 	}
 
 	excelFile, err := h.useCase.ExportReservations(c.Request().Context(), startDateStr, endDateStr, roomTypeInt, status, filterUserID)
-	fmt.Println(startDateStr, endDateStr, roomTypeInt, status, filterUserID)
 	if err != nil {
 		if err.Error() == "reservations not found" {
 			return c.JSON(http.StatusNotFound, response.NotFoundResponse("reservations not found"))

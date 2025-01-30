@@ -274,9 +274,6 @@ func (u *reservationUseCase) ExportReservations(ctx context.Context, startDate s
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("reservations: %v\n", startDate, endDate, roomType, status, userID)
-
 	if reservations == nil {
 		return nil, fmt.Errorf("reservations not found")
 	}

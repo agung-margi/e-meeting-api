@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 
 	_ "github.com/lib/pq"
 )
@@ -18,6 +17,5 @@ func NewPostgresConnection(host, username, password, dbname, port string) (*sql.
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Connected to database")
 	return db, nil
 }
