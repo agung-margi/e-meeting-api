@@ -258,7 +258,7 @@ func (h *reservationHandler) GetReservations(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid room_type"))
 		}
 	}
-	if status != "" && status != "paid" && status != "booked" && status != "cancel" {
+	if status != "" && status != "paid" && status != "booked" && status != "cancelled" {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid status"))
 	}
 
@@ -480,7 +480,7 @@ func (h *reservationHandler) ExportReservations(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid room_type"))
 		}
 	}
-	if status != "" && status != "paid" && status != "booked" && status != "cancel" {
+	if status != "" && status != "paid" && status != "booked" && status != "cancelled" {
 		return c.JSON(http.StatusBadRequest, response.BadRequestResponse("invalid status"))
 	}
 

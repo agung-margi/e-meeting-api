@@ -402,7 +402,8 @@ func (r *reservationRepo) GetSchedulesByDateRange(ctx context.Context, startDate
 	query := `SELECT 
     r.id AS reservation_id,
     rm.id AS room_id, 
-    rm.name AS room_name, 
+    rm.name AS room_name,
+	rd.company AS company,
     r.booking_date, 
     r.start_time, 
     r.end_time
@@ -410,6 +411,9 @@ FROM
     reservations r 
 JOIN 
     rooms rm ON r.room_id = rm.id 
+
+JOIN reservation_details rd ON r.id = rd.reservation_id
+
 WHERE 
     r.booking_date BETWEEN $1 AND $2
     AND r.status = 'paid'`
@@ -421,7 +425,7 @@ WHERE
 	var schedules []entity.RoomSchedule
 	for rows.Next() {
 		schedule := entity.RoomSchedule{}
-		if err := rows.Scan(&schedule.ID, &schedule.RoomID, &schedule.RoomName, &schedule.BookingDate, &schedule.StartTime, &schedule.EndTime); err != nil {
+		if err := rows.Scan(&schedule.ID, &schedule.RoomID, &schedule.RoomName, &schedule.Company, &schedule.BookingDate, &schedule.StartTime, &schedule.EndTime); err != nil {
 			return nil, err
 		}
 

@@ -176,6 +176,21 @@ func (u *reservationUseCase) Save(ctx context.Context, inquiryId int, userId int
 	return reservationDetails, nil
 }
 func (u *reservationUseCase) GetAll(ctx context.Context, startDate string, endDate string, roomType int, status string, userID *int) ([]*entity.ReservationHistory, error) {
+
+	var startDateConv, endDateConv time.Time
+
+	if startDate != "" {
+		startDateConv, _ = time.Parse("2006-01-02", startDate)
+	}
+	if endDate != "" {
+		endDateConv, _ = time.Parse("2006-01-02", endDate)
+	}
+
+	// Validasi tanggal
+	if startDateConv.After(endDateConv) {
+		return nil, fmt.Errorf("start_date must be before end_date")
+	}
+
 	reservations, err := u.repo.GetAll(ctx, startDate, endDate, roomType, status, userID)
 	if err != nil {
 		return nil, err
@@ -257,15 +272,22 @@ func (u *reservationUseCase) StartExpiredReservationWorker(ctx context.Context) 
 
 func (u *reservationUseCase) ExportReservations(ctx context.Context, startDate string, endDate string, roomType int, status string, userID *int) (*excelize.File, error) {
 
-	// if startDate == nil || endDate == nil {
-	// 	return nil, fmt.Errorf("start_date and end_date are required")
-	// }
-	// if startDate.After(*endDate) {
-	// 	return nil, fmt.Errorf("start_date must be before end_date")
-	// }
+	var startDateConv, endDateConv time.Time
+
+	if startDate != "" {
+		startDateConv, _ = time.Parse("2006-01-02", startDate)
+	}
+	if endDate != "" {
+		endDateConv, _ = time.Parse("2006-01-02", endDate)
+	}
+
+	// Validasi tanggal
+	if startDateConv.After(endDateConv) {
+		return nil, fmt.Errorf("start_date must be before end_date")
+	}
 
 	// Validasi status yang diperbolehkan
-	if status != "" && status != "paid" && status != "booked" && status != "cancel" {
+	if status != "" && status != "paid" && status != "booked" && status != "cancelled" {
 		return nil, fmt.Errorf("invalid status")
 	}
 
