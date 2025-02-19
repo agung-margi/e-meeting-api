@@ -14,7 +14,7 @@ import (
 // @version 1.0
 // @description Ini adalah API untuk E-Meeting
 // @termsOfService http://swagger.io/terms/
-// @host localhost:8882
+// @host localhost:8080
 // @BasePath /api/v1
 
 // @SecurityDefinitions.apikey ApiKeyAuth
@@ -39,5 +39,5 @@ func main() {
 		e.Logger.Fatal(err)
 	}
 
-	e.Logger.Fatal(e.Start(":8882"))
+	e.Logger.Fatal(e.Start(":8080"))
 }

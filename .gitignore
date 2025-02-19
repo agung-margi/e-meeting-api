@@ -1,3 +1,6 @@
 .env
 .vscode
 public/photos/*
+docker-compose.yaml
+Dockerfile
+configs/config.json

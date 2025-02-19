@@ -78,7 +78,7 @@ definitions:
       status:
         type: integer
     type: object
-host: localhost:8882
+host: localhost:8080
 info:
   contact: {}
   description: Ini adalah API untuk E-Meeting
